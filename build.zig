@@ -16,7 +16,6 @@ pub fn build(b: *std.Build) void {
         .shared = !static,
     });
     const raylib = raylib_dep.artifact("raylib");
-    b.installArtifact(raylib);
 
     var dll = b.addSharedLibrary(.{
         .name = "game",
