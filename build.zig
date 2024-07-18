@@ -21,7 +21,9 @@ pub fn build(b: *std.Build) void {
         });
         break :blk raylib_dep.artifact("raylib");
     };
-    b.installArtifact(raylib);
+    if (!static) {
+        b.installArtifact(raylib);
+    }
 
     // COMPILE STEPS
     var dll = b.addSharedLibrary(.{
@@ -36,29 +38,21 @@ pub fn build(b: *std.Build) void {
     const reload_step = b.step("reload", "Build the dll");
     reload_step.dependOn(&dll_install.step);
 
-    const dynamic_exe = b.addExecutable(.{
-        .name = "dynamic",
+    const exe = b.addExecutable(.{
+        .name = if (static) "static" else "dynamic",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    dynamic_exe.linkLibrary(raylib);
-    dynamic_exe.root_module.addOptions("config", options);
-    dynamic_exe.step.dependOn(&dll_install.step);
-    b.installArtifact(dynamic_exe);
-
-    const static_exe = b.addExecutable(.{
-        .name = "static",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    static_exe.linkLibrary(raylib);
-    static_exe.root_module.addOptions("config", options);
-    b.installArtifact(static_exe);
+    exe.linkLibrary(raylib);
+    exe.root_module.addOptions("config", options);
+    if (!static) {
+        exe.step.dependOn(&dll_install.step);
+    }
+    b.installArtifact(exe);
 
     // RUN STEPS
-    const run_cmd = b.addRunArtifact(dynamic_exe);
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
     if (b.args) |args| {
@@ -68,5 +62,6 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    // TODO(verve): Put test step back.
+    // TESTS
+    // TODO: Put test step back.
 }
