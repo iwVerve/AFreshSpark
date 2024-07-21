@@ -23,6 +23,8 @@ This means restarting is still needed if you change the game struct variables.
 
 ### TODO
 - Look into other export platforms.
+- Remove raylib.zig in anticipation of usingnamespace getting removed.
+- Reload sometimes fails to get picked up by game, add manual reload key.
 
 ### References
 - https://github.com/samhattangady/hotreload
