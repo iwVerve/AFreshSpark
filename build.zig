@@ -139,7 +139,6 @@ fn buildGameLib(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, rayli
     return dll;
 }
 
-/// Unimplemented
 fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_dep: *Dependency, raylib: *Compile, options: *Options) !void {
     if (b.sysroot == null) {
         @panic("Pass '--sysroot \"[path to emsdk installation]/upstream/emscripten\"'");
