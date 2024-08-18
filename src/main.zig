@@ -34,6 +34,7 @@ pub fn main() !void {
     }
 
     var game = try Game.init();
+    defer game.deinit();
 
     if (builtin.target.isWasm()) {
         // Emscripten game loop

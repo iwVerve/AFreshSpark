@@ -20,7 +20,8 @@ pub fn init() !Game {
     return .{};
 }
 
-pub fn deinit() void {
+pub fn deinit(game: *Game) void {
+    _ = game;
     ray.CloseWindow();
 }
 
