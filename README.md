@@ -1,3 +1,5 @@
+Zig version: `0.14.0-dev.125+a016ca617`
+
 # Zig Raylib Template
 Personal minimal template for [raylib](https://github.com/raysan5/raylib) projects.
 There is no set list of what I intend to include, I'm just unlikely to make something before needing it in practice first.
