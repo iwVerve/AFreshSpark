@@ -1,6 +1,7 @@
 /// Starts and runs the game loop, manages hot reloading.
 /// Shouldn't run actual game logic.
 const std = @import("std");
+const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
 const config = @import("config");
 
@@ -34,17 +35,30 @@ pub fn main() !void {
 
     var game = try Game.init();
 
-    while (!ray.WindowShouldClose()) {
-        if (config.static) {
-            Game.update(&game);
-        } else {
-            if (change_detected) {
-                try hotReload();
-                try spawnWatcher();
+    if (builtin.target.isWasm()) {
+        // Emscripten game loop
+        emscripten_game_ptr = &game;
+        ray.emscripten_set_main_loop(&emscriptenUpdate, 0, 1);
+    } else {
+        // Native game loop
+        while (!ray.WindowShouldClose()) {
+            if (config.static) {
+                Game.update(&game);
+            } else {
+                if (change_detected) {
+                    try hotReload();
+                    try spawnWatcher();
+                }
+                update_fn(&game);
             }
-            update_fn(&game);
         }
     }
+}
+
+var emscripten_game_ptr: ?*Game = null;
+
+fn emscriptenUpdate() callconv(.C) void {
+    Game.update(emscripten_game_ptr.?);
 }
 
 fn hotOpen() !void {
