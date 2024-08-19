@@ -17,7 +17,7 @@ Update to your raylib commit of choice:
 ```bash
 zig build [run] # Build for hotreloading
 zig build [run] -Dstatic -Dstrip -Doptimize=Release-Fast # Build standalone executable
-zig build [run] -Dstatic -Dstrip -Doptimize=Release-Small -Dtarget=wasm32-freestanding --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
+zig build -Dstrip -Doptimize=Release-Small -Dtarget=wasm32-freestanding --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
 zig build reload # Rebuild game dll, game will try to reload it
 ```
 
