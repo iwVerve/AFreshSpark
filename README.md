@@ -36,6 +36,9 @@ If we keep game state in the main process but keep the update function in a
 dll, we can swap out the update function without reseting state. This means
 restarting is still needed if you change the game struct variable definitions.
 
+In dynamic (hotreloadable) builds, F2 restarts the game and F3 forces the game
+dll to reload. These keys are modifiable in main.zig.
+
 ## Web Export
 Follow emscripten installation instructions from
 [here](https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)#1-install-emscripten-toolchain).
@@ -48,7 +51,6 @@ Hotreloading is not supported web builds.
 
 ## TODO
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
-- Reload sometimes fails to get picked up by game, add manual reload key.
 - Copy assets to build folders.
 - Asset hotreloading.
 - Include emsdk as build dependency.

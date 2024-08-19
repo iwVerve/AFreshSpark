@@ -8,6 +8,10 @@ const config = @import("config");
 const ray = @import("raylib.zig");
 const Game = @import("Game.zig");
 
+// Null to disable either key.
+const restart_key: ?c_int = ray.KEY_F2;
+const reload_key: ?c_int = ray.KEY_F3;
+
 const dll_name = config.dll_name ++ ".dll";
 const temp_dll_name = config.dll_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
@@ -33,8 +37,8 @@ pub fn main() !void {
         try hotOpen();
     }
 
-    var game = try Game.init();
-    defer game.deinit();
+    var game = try Game.init(true);
+    defer game.deinit(true);
 
     if (builtin.target.isWasm()) {
         // Emscripten game loop
@@ -46,10 +50,20 @@ pub fn main() !void {
             if (config.static) {
                 Game.update(&game);
             } else {
+                if (reload_key != null and ray.IsKeyPressed(reload_key.?)) {
+                    change_detected = true;
+                }
+
                 if (change_detected) {
                     try hotReload();
                     try spawnWatcher();
                 }
+
+                if (restart_key != null and ray.IsKeyPressed(restart_key.?)) {
+                    game.deinit(false);
+                    game = try Game.init(false);
+                }
+
                 update_fn(&game);
             }
         }

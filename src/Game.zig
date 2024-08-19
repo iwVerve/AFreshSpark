@@ -15,9 +15,11 @@ assets: Assets = .{},
 angle: f32 = 0,
 position: ray.Vector2 = undefined,
 
-pub fn init() !Game {
-    ray.InitWindow(640, 360, "Hello, world!");
-    ray.SetTargetFPS(60);
+pub fn init(init_window: bool) !Game {
+    if (init_window) {
+        ray.InitWindow(640, 360, "Hello, world!");
+        ray.SetTargetFPS(60);
+    }
 
     var game: Game = .{};
 
@@ -26,9 +28,12 @@ pub fn init() !Game {
     return game;
 }
 
-pub fn deinit(game: *Game) void {
+pub fn deinit(game: *Game, deinit_window: bool) void {
     game.assets.deinit();
-    ray.CloseWindow();
+
+    if (deinit_window) {
+        ray.CloseWindow();
+    }
 }
 
 pub export fn update(self: *Game) void {
