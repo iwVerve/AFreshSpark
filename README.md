@@ -22,7 +22,7 @@ zig fetch https://github.com/raysan5/raylib/archive/<hash>.tar.gz --save=raylib
 ```bash
 zig build [run] # Build for hotreloading
 zig build [run] -Dstatic -Dstrip -Doptimize=Release-Fast # Build standalone executable
-zig build -Dstrip -Doptimize=Release-Small -Dtarget=wasm32-freestanding --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
+zig build -Dstrip -Doptimize=ReleaseSmall -Dtarget=wasm32-emscripten --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
 zig build reload # Rebuild game dll, game will try to reload it
 ```
 

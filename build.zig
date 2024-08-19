@@ -176,6 +176,9 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
         "-sUSE_GLFW=3",
         "-O3",
 
+        "--embed-file",
+        "./assets",
+
         // "-sASYNCIFY",
 
         "-sINITIAL_MEMORY=167772160",
