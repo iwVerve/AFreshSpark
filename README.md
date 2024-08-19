@@ -56,6 +56,7 @@ Hotreloading is not supported web builds.
 ## TODO
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
 - Include emsdk as build dependency.
+- Hotreloading is very much Windows-only.
 
 ## References
 - https://github.com/samhattangady/hotreload
