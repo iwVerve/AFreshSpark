@@ -54,7 +54,7 @@ To test web builds locally, run `py -m http.server 8080` in `zig-out/web/` or
 `py -m http.server 8080 --directory zig-out/web/` in the root folder, then
 visit `localhost:8080`.
 
-Hotreloading is not supported web builds.
+Hotreloading is not supported for web builds.
 
 ## TODO
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
