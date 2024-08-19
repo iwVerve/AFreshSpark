@@ -22,7 +22,7 @@ pub fn init(self: *Game, init_window: bool) !void {
         ray.SetExitKey(0);
     }
 
-    self.assets.init();
+    try self.assets.init();
 }
 
 pub export fn initWrapper(self: *Game, init_window: bool) c_int {

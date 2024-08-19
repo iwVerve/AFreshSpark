@@ -32,7 +32,7 @@ const assets = .{
 
 fox: Texture2D = undefined,
 
-pub fn init(self: *Assets) void {
+pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {
         inline for (asset_data.assets) |asset| {
             const field_name = asset[0];
@@ -40,6 +40,10 @@ pub fn init(self: *Assets) void {
             const field = &@field(self, field_name);
 
             field.* = asset_data.load_fn(path);
+
+            if (field.id <= 0) {
+                return error.AssetLoadError;
+            }
         }
     }
 }

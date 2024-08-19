@@ -3,7 +3,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
-const config = @import("config");
+const build_options = @import("build_options");
 
 const ray = @import("raylib.zig");
 const Game = @import("Game.zig");
@@ -13,8 +13,8 @@ const restart_key: ?c_int = ray.KEY_F2;
 const reload_key: ?c_int = ray.KEY_F3;
 
 const game_path = "zig-out/dynamic/";
-const dll_name = game_path ++ config.dll_name ++ ".dll";
-const temp_dll_name = game_path ++ config.dll_name ++ "-temp.dll";
+const dll_name = game_path ++ build_options.dll_name ++ ".dll";
+const temp_dll_name = game_path ++ build_options.dll_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
 
 const dll_watch_path = blk: {
@@ -38,8 +38,8 @@ const asset_watch_path = "assets";
 var asset_watcher_thread: std.Thread = undefined;
 var asset_change_detected = false;
 
-var init_fn: if (config.static) void else *@TypeOf(Game.initWrapper) = undefined;
-var update_fn: if (config.static) void else *@TypeOf(Game.update) = undefined;
+var init_fn: if (build_options.static) void else *@TypeOf(Game.initWrapper) = undefined;
+var update_fn: if (build_options.static) void else *@TypeOf(Game.update) = undefined;
 
 pub fn main() !void {
     // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -47,7 +47,7 @@ pub fn main() !void {
     // const allocator = gpa.allocator();
 
     var game: Game = .{};
-    if (config.static) {
+    if (build_options.static) {
         try game.init(true);
     } else {
         try hotOpen();
@@ -64,7 +64,7 @@ pub fn main() !void {
     } else {
         // Native game loop
         while (!ray.WindowShouldClose()) {
-            if (config.static) {
+            if (build_options.static) {
                 Game.update(&game);
             } else {
                 if (reload_key != null and ray.IsKeyPressed(reload_key.?)) {
@@ -78,7 +78,16 @@ pub fn main() !void {
 
                 if (asset_change_detected) {
                     game.assets.deinit();
-                    game.assets.init();
+                    // Reloading sometimes fails, presumably because whatever edited the file locks it. Retry several times.
+                    for (0..10) |_| {
+                        game.assets.init() catch {
+                            std.time.sleep(0.01 * std.time.ns_per_s);
+                            continue;
+                        };
+                        break;
+                    } else {
+                        return error.AssetLoadError;
+                    }
                     try spawnAssetWatcher();
                 }
 

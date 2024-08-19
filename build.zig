@@ -109,7 +109,7 @@ fn buildStaticExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMo
         .strip = strip,
     });
     exe.linkLibrary(raylib);
-    exe.root_module.addOptions("config", options);
+    exe.root_module.addOptions("build_options", options);
 
     inline for (include_dirs) |include_dir| {
         b.installDirectory(.{
@@ -130,7 +130,7 @@ fn buildDynamicExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeM
         .optimize = optimize,
     });
     exe.linkLibrary(raylib);
-    exe.root_module.addOptions("config", options);
+    exe.root_module.addOptions("build_options", options);
 
     const install = b.addInstallArtifact(raylib, .{ .dest_dir = .{ .override = .{ .custom = install_dir_dynamic } } });
     b.default_step.dependOn(&install.step);
@@ -166,7 +166,7 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
 
     exe_lib.linkLibrary(raylib);
     exe_lib.addIncludePath(raylib_dep.path("src"));
-    exe_lib.root_module.addOptions("config", options);
+    exe_lib.root_module.addOptions("build_options", options);
 
     const sysroot_include = b.pathJoin(&.{ b.sysroot.?, "cache", "sysroot", "include" });
     var dir = std.fs.openDirAbsolute(sysroot_include, std.fs.Dir.OpenDirOptions{ .access_sub_paths = true, .no_follow = true }) catch @panic("No emscripten cache. Generate it!");
