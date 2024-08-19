@@ -52,7 +52,7 @@ Follow emscripten installation instructions from
 
 To test web builds locally, run `py -m http.server 8080` in `zig-out/web/` or
 `py -m http.server 8080 --directory zig-out/web/` in the root folder, then
-visit `localhost:8080`.
+visit `localhost:8080`. `zig build host` is a shorthand for the latter.
 
 Hotreloading is not supported for web builds.
 
