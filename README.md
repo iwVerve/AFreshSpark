@@ -14,7 +14,9 @@ suggestions if you somehow ended up here.
 
 ## Setup
 Update to your raylib commit of choice:
-`zig fetch https://github.com/raysan5/raylib/archive/<hash>.tar.gz --save=raylib`
+```bash
+zig fetch https://github.com/raysan5/raylib/archive/<hash>.tar.gz --save=raylib
+```
 
 ## Usage
 ```bash
