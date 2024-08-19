@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const ray = @import("raylib.zig");
 const Assets = @import("Assets.zig");
@@ -11,6 +12,7 @@ const scale = 2;
 const color: ray.Color = .{ .r = 240, .g = 120, .b = 40, .a = 255 };
 const background_color: ray.Color = .{ .r = 60, .g = 100, .b = 240, .a = 255 };
 
+allocator: Allocator,
 assets: Assets = .{},
 angle: f32 = 0,
 position: ray.Vector2 = undefined,

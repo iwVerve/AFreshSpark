@@ -12,29 +12,21 @@ const Game = @import("Game.zig");
 const restart_key: ?c_int = ray.KEY_F2;
 const reload_key: ?c_int = ray.KEY_F3;
 
-const game_path = "zig-out/dynamic/";
-const dll_name = game_path ++ build_options.dll_name ++ ".dll";
-const temp_dll_name = game_path ++ build_options.dll_name ++ "-temp.dll";
+const dll_name = build_options.install_path ++ "/" ++ build_options.dll_name ++ ".dll";
+const temp_dll_name = build_options.install_path ++ "/" ++ build_options.dll_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
 
 const dll_watch_path = blk: {
-    var str: []const u8 = &.{};
-
-    for (game_path) |char| {
-        if (char == '/') {
-            str = str ++ .{'\\'};
-        } else {
-            const array: []const u8 = &.{char};
-            str = str ++ array;
-        }
-    }
-
-    break :blk str;
+    var str: [build_options.install_path.len]u8 = undefined;
+    @memcpy(&str, build_options.install_path);
+    std.mem.replaceScalar(u8, &str, '/', '\\');
+    const final = str;
+    break :blk &final;
 };
 var dll_watcher_thread: std.Thread = undefined;
 var dll_change_detected = false;
 
-const asset_watch_path = "assets";
+const asset_watch_path = build_options.asset_dir_name;
 var asset_watcher_thread: std.Thread = undefined;
 var asset_change_detected = false;
 
@@ -42,18 +34,29 @@ var init_fn: if (build_options.static) void else *@TypeOf(Game.initWrapper) = un
 var update_fn: if (build_options.static) void else *@TypeOf(Game.update) = undefined;
 
 pub fn main() !void {
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    // defer _ = gpa.deinit();
-    // const allocator = gpa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
 
-    var game: Game = .{};
+    if (build_options.static and !builtin.target.isWasm()) {
+        const game_dir_path = try std.fs.selfExeDirPathAlloc(allocator);
+        var game_dir = try std.fs.openDirAbsolute(game_dir_path, .{});
+        try game_dir.setAsCwd();
+        game_dir.close();
+        allocator.free(game_dir_path);
+    }
+
+    var game: Game = .{
+        .allocator = allocator,
+    };
+
     if (build_options.static) {
         try game.init(true);
     } else {
         try hotOpen();
         if (init_fn(&game, true) != 0) return error.InitializationError;
-        try spawnDLLWatcher();
         try spawnAssetWatcher();
+        try spawnDLLWatcher();
     }
     defer game.deinit(true);
 
@@ -93,7 +96,9 @@ pub fn main() !void {
 
                 if (restart_key != null and ray.IsKeyPressed(restart_key.?)) {
                     game.deinit(false);
-                    game = .{};
+                    game = .{
+                        .allocator = allocator,
+                    };
                     if (init_fn(&game, false) != 0) return error.InitializationError;
                 }
 

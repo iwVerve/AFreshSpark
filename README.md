@@ -57,6 +57,8 @@ Hotreloading is not supported web builds.
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
 - Include emsdk as build dependency.
 - Hotreloading is very much Windows-only.
+- Static exe can be launched from anywhere which currently requires a setAsCwd call. Can we do without it?
+- Changing the installation prefix is far from working.
 
 ## References
 - https://github.com/samhattangady/hotreload

@@ -11,9 +11,10 @@ const Dependency = std.Build.Dependency;
 const game_name = "game";
 const install_dir_dynamic = "dynamic";
 const install_dir_static = "static";
+const asset_dir_name = "assets";
 
 const include_dirs = &.{
-    "assets",
+    asset_dir_name,
 };
 
 pub fn build(b: *std.Build) !void {
@@ -43,6 +44,16 @@ pub fn build(b: *std.Build) !void {
     const options = b.addOptions();
     options.addOption(bool, "static", static);
     options.addOption([]const u8, "dll_name", "game");
+    options.addOption([]const u8, "asset_dir_name", asset_dir_name);
+
+    if (!static) {
+        const install_path = blk: {
+            const current_absolute = try std.fs.cwd().realpathAlloc(b.allocator, "");
+            const install_prefix = std.fs.path.relative(b.allocator, current_absolute, b.install_prefix) catch b.install_prefix;
+            break :blk b.fmt("{s}/{s}", .{ install_prefix, install_dir_dynamic });
+        };
+        options.addOption([]const u8, "install_path", install_path);
+    }
 
     // DEPENDENCY
     const raylib_dep = b.dependency("raylib", .{
@@ -146,7 +157,7 @@ fn buildGameLib(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, rayli
         .optimize = optimize,
     });
     dll.linkLibrary(raylib);
-    dll.root_module.addOptions("config", options);
+    dll.root_module.addOptions("build_options", options);
 
     return dll;
 }
