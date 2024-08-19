@@ -49,6 +49,7 @@ Hotreloading is not supported web builds.
 - Reload sometimes fails to get picked up by game, add manual reload key.
 - Copy assets to build folders.
 - Asset hotreloading.
+- Include emsdk as build dependency.
 
 ## References
 - https://github.com/samhattangady/hotreload
