@@ -13,6 +13,7 @@ const install_dir_dynamic = "dynamic";
 const install_dir_static = "static";
 const asset_dir_name = "assets";
 
+// Directories listed here get copied to the static build directory and embedded into the web build.
 const include_dirs = &.{
     asset_dir_name,
 };
@@ -107,6 +108,18 @@ pub fn build(b: *std.Build) !void {
         const run_step = b.step("run", "Run the app");
         run_step.dependOn(&run_cmd.step);
     }
+
+    const web_cmd = blk: {
+        const emsdk = std.process.getEnvVarOwned(b.allocator, "EMSDK") catch "";
+        const sysroot = b.fmt("{s}/upstream/emscripten", .{emsdk});
+        break :blk b.addSystemCommand(&.{ "zig", "build", "-Dtarget=wasm32-emscripten", "-Doptimize=ReleaseSmall", "-Dstrip", "--sysroot", sysroot });
+    };
+    const web_step = b.step("web", "");
+    web_step.dependOn(&web_cmd.step);
+
+    const host_cmd = b.addSystemCommand(&.{ "py", "-m", "http.server", "8080", "--directory", "zig-out/web" });
+    const host_step = b.step("host", "");
+    host_step.dependOn(&host_cmd.step);
 
     // TODO: Put test step back.
 }

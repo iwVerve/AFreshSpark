@@ -22,8 +22,11 @@ zig fetch https://github.com/raysan5/raylib/archive/<hash>.tar.gz --save=raylib
 ```bash
 zig build [run] # Build for hotreloading
 zig build [run] -Dstatic -Dstrip -Doptimize=Release-Fast # Build standalone executable
-zig build -Dstrip -Doptimize=ReleaseSmall -Dtarget=wasm32-emscripten --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
 zig build reload # Rebuild game dll, game will try to reload it
+
+zig build -Dstrip -Doptimize=ReleaseSmall -Dtarget=wasm32-emscripten --sysroot "%EMSDK%/upstream/emscripten" # Build for web (Windows)
+zig build web # Build for web
+zig build host # Host default web build directory (requires python)
 ```
 
 ### Container variables
@@ -59,6 +62,8 @@ Hotreloading is not supported web builds.
 - Hotreloading is very much Windows-only.
 - Static exe can be launched from anywhere which currently requires a setAsCwd call. Can we do without it?
 - Changing the installation prefix is far from working.
+- Is `b.addSystemCommand(&.{ "zig", "build", ...})` really a healthy way to make preset steps.
+- Documentation, general cleanup. Move hotreloading code from main to own file?
 
 ## References
 - https://github.com/samhattangady/hotreload
