@@ -15,17 +15,19 @@ assets: Assets = .{},
 angle: f32 = 0,
 position: ray.Vector2 = undefined,
 
-pub fn init(init_window: bool) !Game {
+pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {
         ray.InitWindow(640, 360, "Hello, world!");
         ray.SetTargetFPS(60);
+        ray.SetExitKey(0);
     }
 
-    var game: Game = .{};
+    self.assets.init();
+}
 
-    game.assets.init();
-
-    return game;
+pub export fn initWrapper(self: *Game, init_window: bool) c_int {
+    self.init(init_window) catch return 1;
+    return 0;
 }
 
 pub fn deinit(game: *Game, deinit_window: bool) void {

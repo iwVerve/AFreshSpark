@@ -19,6 +19,7 @@ var dll: std.DynLib = undefined;
 var watcher_thread: std.Thread = undefined;
 var change_detected = true;
 
+var init_fn: if (config.static) void else *@TypeOf(Game.initWrapper) = undefined;
 var update_fn: if (config.static) void else *@TypeOf(Game.update) = undefined;
 
 pub fn main() !void {
@@ -37,7 +38,12 @@ pub fn main() !void {
         try hotOpen();
     }
 
-    var game = try Game.init(true);
+    var game: Game = .{};
+    if (config.static) {
+        try game.init(true);
+    } else {
+        if (init_fn(&game, true) != 0) return error.InitializationError;
+    }
     defer game.deinit(true);
 
     if (builtin.target.isWasm()) {
@@ -61,7 +67,8 @@ pub fn main() !void {
 
                 if (restart_key != null and ray.IsKeyPressed(restart_key.?)) {
                     game.deinit(false);
-                    game = try Game.init(false);
+                    game = .{};
+                    if (init_fn(&game, false) != 0) return error.InitializationError;
                 }
 
                 update_fn(&game);
@@ -81,6 +88,7 @@ fn hotOpen() !void {
     try dir.copyFile(dll_name, dir, temp_dll_name, .{});
     dll = try std.DynLib.open(temp_dll_name);
 
+    init_fn = dll.lookup(@TypeOf(init_fn), "initWrapper") orelse return error.FunctionNotFound;
     update_fn = dll.lookup(@TypeOf(update_fn), "update") orelse return error.FunctionNotFound;
 }
 

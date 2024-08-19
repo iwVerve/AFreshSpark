@@ -37,7 +37,8 @@ dll, we can swap out the update function without reseting state. This means
 restarting is still needed if you change the game struct variable definitions.
 
 In dynamic (hotreloadable) builds, F2 restarts the game and F3 forces the game
-dll to reload. These keys are modifiable in main.zig.
+dll to reload. These keys are modifiable in main.zig. The init function is
+reloadable as well.
 
 ## Web Export
 Follow emscripten installation instructions from
