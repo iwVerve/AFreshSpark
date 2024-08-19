@@ -27,12 +27,17 @@ This means restarting is still needed if you change the game struct variables.
 
 ### Web Export
 Follow emscripten installation instructions from [here](https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)#1-install-emscripten-toolchain).
-To test web builds locally, run `py -m http.server 8080` in `zig-out/web/` or `py -m http.server 8080 --directory zig-out/web/` in the root folder, then visit `localhost:8080`.
+
+To test web builds locally, run `py -m http.server 8080` in `zig-out/web/`
+or `py -m http.server 8080 --directory zig-out/web/` in the root folder, then visit `localhost:8080`.
+
+Hotreloading is not supported web builds.
 
 ### TODO
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
 - Reload sometimes fails to get picked up by game, add manual reload key.
-- Asset loading
+- Copy assets to build folders.
+- Asset hotreloading.
 
 ### References
 - https://github.com/samhattangady/hotreload
