@@ -12,37 +12,48 @@ const Game = @import("Game.zig");
 const restart_key: ?c_int = ray.KEY_F2;
 const reload_key: ?c_int = ray.KEY_F3;
 
-const dll_name = config.dll_name ++ ".dll";
-const temp_dll_name = config.dll_name ++ "-temp.dll";
+const game_path = "zig-out/dynamic/";
+const dll_name = game_path ++ config.dll_name ++ ".dll";
+const temp_dll_name = game_path ++ config.dll_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
 
-var watcher_thread: std.Thread = undefined;
-var change_detected = true;
+const dll_watch_path = blk: {
+    var str: []const u8 = &.{};
+
+    for (game_path) |char| {
+        if (char == '/') {
+            str = str ++ .{'\\'};
+        } else {
+            const array: []const u8 = &.{char};
+            str = str ++ array;
+        }
+    }
+
+    break :blk str;
+};
+var dll_watcher_thread: std.Thread = undefined;
+var dll_change_detected = false;
+
+const asset_watch_path = "assets";
+var asset_watcher_thread: std.Thread = undefined;
+var asset_change_detected = false;
 
 var init_fn: if (config.static) void else *@TypeOf(Game.initWrapper) = undefined;
 var update_fn: if (config.static) void else *@TypeOf(Game.update) = undefined;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    if (!config.static) {
-        const game_dir_path = try std.fs.selfExeDirPathAlloc(allocator);
-        defer allocator.free(game_dir_path);
-        const game_dir = try std.fs.openDirAbsolute(game_dir_path, .{});
-
-        // NOTE(verve): Not ideal, but dllWatcher wasn't behaving.
-        try game_dir.setAsCwd();
-
-        try hotOpen();
-    }
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // defer _ = gpa.deinit();
+    // const allocator = gpa.allocator();
 
     var game: Game = .{};
     if (config.static) {
         try game.init(true);
     } else {
+        try hotOpen();
         if (init_fn(&game, true) != 0) return error.InitializationError;
+        try spawnDLLWatcher();
+        try spawnAssetWatcher();
     }
     defer game.deinit(true);
 
@@ -57,12 +68,18 @@ pub fn main() !void {
                 Game.update(&game);
             } else {
                 if (reload_key != null and ray.IsKeyPressed(reload_key.?)) {
-                    change_detected = true;
+                    dll_change_detected = true;
                 }
 
-                if (change_detected) {
+                if (dll_change_detected) {
                     try hotReload();
-                    try spawnWatcher();
+                    try spawnDLLWatcher();
+                }
+
+                if (asset_change_detected) {
+                    game.assets.deinit();
+                    game.assets.init();
+                    try spawnAssetWatcher();
                 }
 
                 if (restart_key != null and ray.IsKeyPressed(restart_key.?)) {
@@ -101,15 +118,21 @@ fn hotReload() !void {
     try hotOpen();
 }
 
-fn spawnWatcher() !void {
-    change_detected = false;
-    watcher_thread = std.Thread.spawn(.{}, dllWatcher, .{}) catch unreachable;
-    watcher_thread.detach();
+fn spawnAssetWatcher() !void {
+    asset_change_detected = false;
+    asset_watcher_thread = std.Thread.spawn(.{}, watcher, .{ asset_watch_path, &asset_change_detected }) catch unreachable;
+    asset_watcher_thread.detach();
 }
 
-fn dllWatcher() void {
+fn spawnDLLWatcher() !void {
+    dll_change_detected = false;
+    dll_watcher_thread = std.Thread.spawn(.{}, watcher, .{ dll_watch_path, &dll_change_detected }) catch unreachable;
+    dll_watcher_thread.detach();
+}
+
+fn watcher(dir_path: []const u8, out: *bool) void {
     var dirname_path_space: std.os.windows.PathSpace = undefined;
-    dirname_path_space.len = std.unicode.utf8ToUtf16Le(&dirname_path_space.data, "") catch unreachable;
+    dirname_path_space.len = std.unicode.utf8ToUtf16Le(&dirname_path_space.data, dir_path) catch unreachable;
     dirname_path_space.data[dirname_path_space.len] = 0;
     const dir_handle = std.os.windows.OpenFile(dirname_path_space.span(), .{
         .dir = std.fs.cwd().fd,
@@ -127,7 +150,7 @@ fn dllWatcher() void {
         dir_handle,
         &event_buf,
         event_buf.len,
-        std.os.windows.FALSE,
+        std.os.windows.TRUE,
         std.os.windows.FILE_NOTIFY_CHANGE_FILE_NAME | std.os.windows.FILE_NOTIFY_CHANGE_DIR_NAME |
             std.os.windows.FILE_NOTIFY_CHANGE_ATTRIBUTES | std.os.windows.FILE_NOTIFY_CHANGE_SIZE |
             std.os.windows.FILE_NOTIFY_CHANGE_LAST_WRITE | std.os.windows.FILE_NOTIFY_CHANGE_LAST_ACCESS |
@@ -136,5 +159,5 @@ fn dllWatcher() void {
         null,
         null,
     );
-    change_detected = true;
+    out.* = true;
 }

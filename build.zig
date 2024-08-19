@@ -12,6 +12,10 @@ const game_name = "game";
 const install_dir_dynamic = "dynamic";
 const install_dir_static = "static";
 
+const include_dirs = &.{
+    "assets",
+};
+
 pub fn build(b: *std.Build) !void {
     // TARGET
     const target = b.standardTargetOptions(.{});
@@ -30,7 +34,7 @@ pub fn build(b: *std.Build) !void {
     const actual_target = if (is_wasm) wasm_target else target;
 
     // OPTIONS
-    const static = if (is_wasm)
+    const static = if (is_wasm or actual_target.result.os.tag != .windows)
         true
     else
         b.option(bool, "static", "Build standalone executable") orelse false;
@@ -107,6 +111,14 @@ fn buildStaticExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMo
     exe.linkLibrary(raylib);
     exe.root_module.addOptions("config", options);
 
+    inline for (include_dirs) |include_dir| {
+        b.installDirectory(.{
+            .source_dir = b.path(include_dir),
+            .install_dir = .{ .custom = "" },
+            .install_subdir = install_dir_static ++ "/" ++ include_dir,
+        });
+    }
+
     return exe;
 }
 
@@ -162,6 +174,9 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
 
     exe_lib.addIncludePath(.{ .cwd_relative = sysroot_include });
 
+    const cwd = std.fs.cwd();
+    try cwd.makePath("zig-out/web");
+
     const emcc_exe = switch (builtin.os.tag) {
         .windows => "emcc.bat",
         else => "emcc",
@@ -176,17 +191,19 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
         "-sUSE_GLFW=3",
         "-O3",
 
-        "--embed-file",
-        "./assets",
-
-        // "-sASYNCIFY",
-
         "-sINITIAL_MEMORY=167772160",
 
         "-sUSE_OFFSET_CONVERTER",
         "--shell-file",
         b.path("src/shell.html").getPath(b),
     });
+
+    inline for (include_dirs) |include_dir| {
+        emcc_command.addArgs(&.{
+            "--embed-file",
+            include_dir,
+        });
+    }
 
     const link_items: []const *std.Build.Step.Compile = &.{
         raylib,

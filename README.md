@@ -9,7 +9,7 @@ While this is made entirely for personal purposes, I am open to questions and
 suggestions if you somehow ended up here.
 
 ## Features
-- Hotreloading
+- Code and asset hotreloading
 - Web export
 
 ## Setup
@@ -40,6 +40,9 @@ In dynamic (hotreloadable) builds, F2 restarts the game and F3 forces the game
 dll to reload. These keys are modifiable in main.zig. The init function is
 reloadable as well.
 
+Dynamic builds need to be launched from the project root directory, as they
+need to see the asset directory.
+
 ## Web Export
 Follow emscripten installation instructions from
 [here](https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)#1-install-emscripten-toolchain).
@@ -52,8 +55,6 @@ Hotreloading is not supported web builds.
 
 ## TODO
 - Remove raylib.zig in anticipation of usingnamespace getting removed.
-- Copy assets to build folders.
-- Asset hotreloading.
 - Include emsdk as build dependency.
 
 ## References
