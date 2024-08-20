@@ -1,11 +1,13 @@
 const std = @import("std");
-const Allocator = std.mem.Allocator;
+const builtin = @import("builtin");
 
 const config = @import("config.zig");
 const ray = @import("raylib.zig");
 const Assets = @import("Assets.zig");
 
 const Game = @This();
+
+const Allocator = std.mem.Allocator;
 
 const center: ray.Vector2 = .{ .x = 320, .y = 180 };
 const radius = 120;
@@ -54,6 +56,7 @@ pub fn update(self: *Game) !void {
     try self.draw();
 }
 
+// Exported functions can't return zig errors, wrap regular update function.
 pub export fn updateWrapper(self: *Game) c_int {
     self.update() catch return 1;
     return 0;
