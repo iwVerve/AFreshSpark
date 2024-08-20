@@ -1,4 +1,4 @@
-Zig version: `0.14.0-dev.125+a016ca617`
+Zig version: `0.14.0-dev.1210+54e48f7b7`
 
 # Zig Raylib Template
 Personal minimal template for [raylib](https://github.com/raysan5/raylib)

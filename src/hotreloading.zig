@@ -116,10 +116,16 @@ fn watcher(dir_path: []const u8, out: *bool) void {
         &event_buf,
         event_buf.len,
         std.os.windows.TRUE,
-        std.os.windows.FILE_NOTIFY_CHANGE_FILE_NAME | std.os.windows.FILE_NOTIFY_CHANGE_DIR_NAME |
-            std.os.windows.FILE_NOTIFY_CHANGE_ATTRIBUTES | std.os.windows.FILE_NOTIFY_CHANGE_SIZE |
-            std.os.windows.FILE_NOTIFY_CHANGE_LAST_WRITE | std.os.windows.FILE_NOTIFY_CHANGE_LAST_ACCESS |
-            std.os.windows.FILE_NOTIFY_CHANGE_CREATION | std.os.windows.FILE_NOTIFY_CHANGE_SECURITY,
+        std.os.windows.FileNotifyChangeFilter{
+            .file_name = true,
+            .dir_name = true,
+            .attributes = true,
+            .size = true,
+            .last_write = true,
+            .last_access = true,
+            .creation = true,
+            .security = true,
+        },
         &num_bytes,
         null,
         null,
