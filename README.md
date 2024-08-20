@@ -63,7 +63,7 @@ Hotreloading is not supported for web builds.
 - Static exe can be launched from anywhere which currently requires a setAsCwd call. Can we do without it?
 - Changing the installation prefix is far from working.
 - Is `b.addSystemCommand(&.{ "zig", "build", ...})` really a healthy way to make preset steps.
-- Documentation, general cleanup. Move hotreloading code from main to own file?
+- Documentation, general cleanup.
 
 ## References
 - https://github.com/samhattangady/hotreload
