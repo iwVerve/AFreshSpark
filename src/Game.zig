@@ -28,6 +28,7 @@ pub fn init(self: *Game, init_window: bool) !void {
     try self.assets.init();
 }
 
+// Exported functions can't return zig errors, wrap regular init function.
 pub export fn initWrapper(self: *Game, init_window: bool) c_int {
     self.init(init_window) catch return 1;
     return 0;
@@ -41,7 +42,7 @@ pub fn deinit(game: *Game, deinit_window: bool) void {
     }
 }
 
-pub export fn update(self: *Game) void {
+pub fn update(self: *Game) !void {
     const math = std.math;
 
     self.angle += 2;
@@ -51,6 +52,11 @@ pub export fn update(self: *Game) void {
     };
 
     try self.draw();
+}
+
+pub export fn updateWrapper(self: *Game) c_int {
+    self.update() catch return 1;
+    return 0;
 }
 
 fn draw(self: Game) !void {

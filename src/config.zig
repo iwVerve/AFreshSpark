@@ -1,3 +1,5 @@
+const ray = @import("raylib.zig");
+
 pub const game_name = "game";
 
 // INSTALL CONFIG
@@ -11,6 +13,10 @@ pub const asset_dir_name = "assets";
 pub const install_dirs = &.{
     asset_dir_name,
 };
+
+// Hotreloading only. Set to null to disable.
+pub const restart_key: ?c_int = ray.KEY_F2;
+pub const reload_key: ?c_int = ray.KEY_F3;
 
 // GAME CONFIG
 

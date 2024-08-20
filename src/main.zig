@@ -2,12 +2,13 @@
 /// Shouldn't run actual game logic.
 const std = @import("std");
 const builtin = @import("builtin");
-const Allocator = std.mem.Allocator;
 const build_options = @import("build_options");
 
 const hot = @import("hotreloading.zig");
 const ray = @import("raylib.zig");
 const Game = @import("Game.zig");
+
+const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -15,6 +16,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     if (build_options.static and !builtin.target.isWasm()) {
+        // Set working directory to load assets correctly regardless of where the game was launched from.
         const game_dir_path = try std.fs.selfExeDirPathAlloc(allocator);
         var game_dir = try std.fs.openDirAbsolute(game_dir_path, .{});
         try game_dir.setAsCwd();
@@ -44,7 +46,7 @@ pub fn main() !void {
         // Native game loop
         while (!ray.WindowShouldClose()) {
             if (build_options.static) {
-                Game.update(&game);
+                try game.update();
             } else {
                 try hot.update(&game, allocator);
             }

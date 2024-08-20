@@ -6,10 +6,6 @@ const config = @import("config.zig");
 const ray = @import("raylib.zig");
 const Game = @import("Game.zig");
 
-// Null to disable either key.
-const restart_key: ?c_int = ray.KEY_F2;
-const reload_key: ?c_int = ray.KEY_F3;
-
 const dll_name = build_options.install_path ++ "/" ++ config.game_name ++ ".dll";
 const temp_dll_name = build_options.install_path ++ "/" ++ config.game_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
@@ -29,10 +25,11 @@ var asset_watcher_thread: std.Thread = undefined;
 var asset_change_detected = false;
 
 pub var init_fn: if (build_options.static) void else *@TypeOf(Game.initWrapper) = undefined;
-pub var update_fn: if (build_options.static) void else *@TypeOf(Game.update) = undefined;
+pub var update_fn: if (build_options.static) void else *@TypeOf(Game.updateWrapper) = undefined;
 
 pub fn update(game: *Game, allocator: Allocator) !void {
-    if (reload_key != null and ray.IsKeyPressed(reload_key.?)) {
+    if (config.reload_key != null and ray.IsKeyPressed(config.reload_key.?)) {
+        // Force reload
         dll_change_detected = true;
     }
 
@@ -56,7 +53,8 @@ pub fn update(game: *Game, allocator: Allocator) !void {
         try spawnAssetWatcher();
     }
 
-    if (restart_key != null and ray.IsKeyPressed(restart_key.?)) {
+    if (config.restart_key != null and ray.IsKeyPressed(config.restart_key.?)) {
+        // Restart game
         game.deinit(false);
         game.* = .{
             .allocator = allocator,
@@ -64,7 +62,7 @@ pub fn update(game: *Game, allocator: Allocator) !void {
         if (init_fn(game, false) != 0) return error.InitializationError;
     }
 
-    update_fn(game);
+    if (update_fn(game) != 0) return error.UpdateError;
 }
 
 pub fn dllOpen() !void {
@@ -73,7 +71,7 @@ pub fn dllOpen() !void {
     dll = try std.DynLib.open(temp_dll_name);
 
     init_fn = dll.lookup(@TypeOf(init_fn), "initWrapper") orelse return error.FunctionNotFound;
-    update_fn = dll.lookup(@TypeOf(update_fn), "update") orelse return error.FunctionNotFound;
+    update_fn = dll.lookup(@TypeOf(update_fn), "updateWrapper") orelse return error.FunctionNotFound;
 }
 
 pub fn dllClose() void {
