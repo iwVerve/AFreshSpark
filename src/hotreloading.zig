@@ -1,6 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const build_options = @import("build_options");
+const config = @import("config.zig");
 
 const ray = @import("raylib.zig");
 const Game = @import("Game.zig");
@@ -9,8 +10,8 @@ const Game = @import("Game.zig");
 const restart_key: ?c_int = ray.KEY_F2;
 const reload_key: ?c_int = ray.KEY_F3;
 
-const dll_name = build_options.install_path ++ "/" ++ build_options.dll_name ++ ".dll";
-const temp_dll_name = build_options.install_path ++ "/" ++ build_options.dll_name ++ "-temp.dll";
+const dll_name = build_options.install_path ++ "/" ++ config.game_name ++ ".dll";
+const temp_dll_name = build_options.install_path ++ "/" ++ config.game_name ++ "-temp.dll";
 var dll: std.DynLib = undefined;
 
 const dll_watch_path = blk: {
@@ -23,7 +24,7 @@ const dll_watch_path = blk: {
 var dll_watcher_thread: std.Thread = undefined;
 var dll_change_detected = false;
 
-const asset_watch_path = build_options.asset_dir_name;
+const asset_watch_path = config.asset_dir_name;
 var asset_watcher_thread: std.Thread = undefined;
 var asset_change_detected = false;
 

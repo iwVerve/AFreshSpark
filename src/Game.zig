@@ -1,6 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
+const config = @import("config.zig");
 const ray = @import("raylib.zig");
 const Assets = @import("Assets.zig");
 
@@ -19,7 +20,7 @@ position: ray.Vector2 = undefined,
 
 pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {
-        ray.InitWindow(640, 360, "Hello, world!");
+        ray.InitWindow(config.resolution.width, config.resolution.height, config.game_name);
         ray.SetTargetFPS(60);
         ray.SetExitKey(0);
     }

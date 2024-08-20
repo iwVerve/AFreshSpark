@@ -1,22 +1,14 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+const config = @import("src/config.zig");
+
 const Build = std.Build;
 const Compile = std.Build.Step.Compile;
 const ResolvedTarget = std.Build.ResolvedTarget;
 const OptimizeMode = std.builtin.OptimizeMode;
 const Options = std.Build.Step.Options;
 const Dependency = std.Build.Dependency;
-
-const game_name = "game";
-const install_dir_dynamic = "dynamic";
-const install_dir_static = "static";
-const asset_dir_name = "assets";
-
-// Directories listed here get copied to the static build directory and embedded into the web build.
-const include_dirs = &.{
-    asset_dir_name,
-};
 
 pub fn build(b: *std.Build) !void {
     // TARGET
@@ -36,6 +28,7 @@ pub fn build(b: *std.Build) !void {
     const actual_target = if (is_wasm) wasm_target else target;
 
     // OPTIONS
+    // Configuration not decided at compile time should be set in src/config.zig instead.
     const static = if (is_wasm or actual_target.result.os.tag != .windows)
         true
     else
@@ -44,14 +37,12 @@ pub fn build(b: *std.Build) !void {
     const strip = b.option(bool, "strip", "Strip debug symbols") orelse false;
     const options = b.addOptions();
     options.addOption(bool, "static", static);
-    options.addOption([]const u8, "dll_name", "game");
-    options.addOption([]const u8, "asset_dir_name", asset_dir_name);
 
     if (!static) {
         const install_path = blk: {
             const current_absolute = try std.fs.cwd().realpathAlloc(b.allocator, "");
             const install_prefix = std.fs.path.relative(b.allocator, current_absolute, b.install_prefix) catch b.install_prefix;
-            break :blk b.fmt("{s}/{s}", .{ install_prefix, install_dir_dynamic });
+            break :blk b.fmt("{s}/{s}", .{ install_prefix, config.install_dir_dynamic });
         };
         options.addOption([]const u8, "install_path", install_path);
     }
@@ -78,11 +69,11 @@ pub fn build(b: *std.Build) !void {
         const exe: ExeBuild = if (static) blk: {
             break :blk .{
                 .compile = buildStaticExecutable(b, actual_target, optimize, raylib, options, strip),
-                .dir = install_dir_static,
+                .dir = config.install_dir_static,
             };
         } else blk: {
             const dll = buildGameLib(b, actual_target, optimize, raylib, options);
-            const dll_install = b.addInstallArtifact(dll, .{ .dest_dir = .{ .override = .{ .custom = install_dir_dynamic } } });
+            const dll_install = b.addInstallArtifact(dll, .{ .dest_dir = .{ .override = .{ .custom = config.install_dir_dynamic } } });
 
             const reload_step = b.step("reload", "Build the dll");
             reload_step.dependOn(&dll_install.step);
@@ -91,7 +82,7 @@ pub fn build(b: *std.Build) !void {
             exe.step.dependOn(&dll_install.step);
             break :blk .{
                 .compile = exe,
-                .dir = install_dir_dynamic,
+                .dir = config.install_dir_dynamic,
             };
         };
         // b.installArtifact(exe.compile);
@@ -126,7 +117,7 @@ pub fn build(b: *std.Build) !void {
 
 fn buildStaticExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib: *Compile, options: *Options, strip: bool) *Compile {
     const exe = b.addExecutable(.{
-        .name = game_name,
+        .name = config.game_name,
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
@@ -135,11 +126,11 @@ fn buildStaticExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMo
     exe.linkLibrary(raylib);
     exe.root_module.addOptions("build_options", options);
 
-    inline for (include_dirs) |include_dir| {
+    inline for (config.install_dirs) |include_dir| {
         b.installDirectory(.{
             .source_dir = b.path(include_dir),
             .install_dir = .{ .custom = "" },
-            .install_subdir = install_dir_static ++ "/" ++ include_dir,
+            .install_subdir = config.install_dir_static ++ "/" ++ include_dir,
         });
     }
 
@@ -148,7 +139,7 @@ fn buildStaticExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMo
 
 fn buildDynamicExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib: *Compile, options: *Options) *Compile {
     const exe = b.addExecutable(.{
-        .name = game_name,
+        .name = config.game_name,
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
@@ -156,7 +147,7 @@ fn buildDynamicExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeM
     exe.linkLibrary(raylib);
     exe.root_module.addOptions("build_options", options);
 
-    const install = b.addInstallArtifact(raylib, .{ .dest_dir = .{ .override = .{ .custom = install_dir_dynamic } } });
+    const install = b.addInstallArtifact(raylib, .{ .dest_dir = .{ .override = .{ .custom = config.install_dir_dynamic } } });
     b.default_step.dependOn(&install.step);
 
     return exe;
@@ -164,7 +155,7 @@ fn buildDynamicExecutable(b: *Build, target: ResolvedTarget, optimize: OptimizeM
 
 fn buildGameLib(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib: *Compile, options: *Options) *Compile {
     var dll = b.addSharedLibrary(.{
-        .name = game_name,
+        .name = config.game_name,
         .root_source_file = b.path("src/Game.zig"),
         .target = target,
         .optimize = optimize,
@@ -181,7 +172,7 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
     }
 
     const exe_lib = b.addStaticLibrary(.{
-        .name = game_name,
+        .name = config.game_name,
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
@@ -222,7 +213,7 @@ fn buildWeb(b: *Build, target: ResolvedTarget, optimize: OptimizeMode, raylib_de
         b.path("src/shell.html").getPath(b),
     });
 
-    inline for (include_dirs) |include_dir| {
+    inline for (config.install_dirs) |include_dir| {
         emcc_command.addArgs(&.{
             "--embed-file",
             include_dir,

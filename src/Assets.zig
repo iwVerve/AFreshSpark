@@ -1,10 +1,10 @@
 const ray = @import("raylib.zig");
 const Texture2D = ray.Texture2D;
-const build_options = @import("build_options");
+const config = @import("config.zig");
 
 const Assets = @This();
 
-const assets_dir = build_options.asset_dir_name ++ "/";
+const assets_dir = config.asset_dir_name ++ "/";
 
 fn AssetData(T: type) type {
     const AssetEntry = struct {
