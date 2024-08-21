@@ -13,7 +13,11 @@ const Allocator = std.mem.Allocator;
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+
+    const allocator = if (builtin.target.isWasm())
+        std.heap.c_allocator
+    else
+        gpa.allocator();
 
     if (build_options.static and !builtin.target.isWasm()) {
         // Set working directory to load assets correctly regardless of where the game was launched from.
@@ -57,5 +61,5 @@ pub fn main() !void {
 var emscripten_game_ptr: ?*Game = null;
 
 fn emscriptenUpdate() callconv(.C) void {
-    Game.update(emscripten_game_ptr.?);
+    Game.update(emscripten_game_ptr.?) catch {};
 }
