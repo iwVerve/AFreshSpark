@@ -7,12 +7,15 @@ const TileMap = @import("TileMap.zig");
 const Tile = @import("Tile.zig");
 const config = @import("config.zig");
 const Object = @import("Object.zig");
+const util = @import("util.zig");
+
+const UVector2 = util.UVector2;
 
 pub const test1 = parse(.{
     .tiles =
     \\#######
-    \\#.....#
-    \\#.....#
+    \\#P....#
+    \\#.XX..#
     \\#.....#
     \\#######
     ,
@@ -32,6 +35,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
 
     var tiles: []const []const Tile = &.{};
     var tile_row: []const Tile = &.{};
+    var objects: []const Object.Prototype = &.{};
 
     for (level.tiles) |char| {
         if (char == '\n') {
@@ -50,11 +54,20 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
             height += 1;
             current_width = 0;
         } else {
-            const tile: Tile = switch (char) {
-                '#' => .{ .wall = true },
-                '.' => .{ .wall = false },
-                else => @compileError(std.fmt.comptimePrint("Invalid tile char: {c}\n", .{char})),
-            };
+            const tile: Tile = if (char == '#') .{ .wall = true } else .{ .wall = false };
+
+            blk: {
+                const object: Object.Prototype = .{
+                    .object_type = switch (char) {
+                        'P' => .player,
+                        'X' => .block,
+                        else => break :blk,
+                    },
+                    .board_position = .{ .x = current_width, .y = height },
+                };
+                objects = objects ++ .{object};
+            }
+
             tile_row = tile_row ++ .{tile};
             current_width += 1;
         }
@@ -66,11 +79,6 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .width = width,
         .height = height,
     };
-
-    const player: Object.Prototype = .{ .object_type = .player, .board_position = .{ .x = 1, .y = 1 } };
-    const block: Object.Prototype = .{ .object_type = .block, .board_position = .{ .x = 2, .y = 2 } };
-    const block2: Object.Prototype = .{ .object_type = .block, .board_position = .{ .x = 3, .y = 2 } };
-    const objects = &.{ player, block, block2 };
 
     const width_px: comptime_float = @floatFromInt(config.tile_size * width);
     const height_px: comptime_float = @floatFromInt(config.tile_size * height);

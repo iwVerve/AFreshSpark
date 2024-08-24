@@ -165,6 +165,10 @@ fn resolveMovement(self: *TileMap) void {
             updated = true;
         }
     }
+
+    for (self.objects.items) |*object| {
+        object.attempted_direction = null;
+    }
 }
 
 fn getTile(self: TileMap, position: anytype) ?Tile {
