@@ -29,6 +29,7 @@ const assets = .{
             .{ "wall", "wall.png" },
             .{ "player", "player.png" },
             .{ "block", "block.png" },
+            .{ "button", "button.png" },
             .{ "connection_end", "connection_end.png" },
             .{ "connection_h", "connection_h.png" },
             .{ "connection_v", "connection_v.png" },
@@ -43,6 +44,7 @@ const assets = .{
 wall: Texture2D,
 player: Texture2D,
 block: Texture2D,
+button: Texture2D,
 
 connection_end: Texture2D,
 connection_h: Texture2D,
