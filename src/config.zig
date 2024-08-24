@@ -24,3 +24,5 @@ pub const resolution = .{
     .width = 640,
     .height = 360,
 };
+
+pub const tile_size = 64;

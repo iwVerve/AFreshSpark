@@ -4,6 +4,8 @@ const builtin = @import("builtin");
 const config = @import("config.zig");
 const ray = @import("raylib.zig");
 const Assets = @import("Assets.zig");
+const LevelState = @import("LevelState.zig");
+const levels = @import("levels.zig");
 
 const Game = @This();
 
@@ -15,10 +17,19 @@ const scale = 2;
 const color: ray.Color = .{ .r = 240, .g = 120, .b = 40, .a = 255 };
 const background_color: ray.Color = .{ .r = 60, .g = 100, .b = 240, .a = 255 };
 
+const State = union(enum) {
+    level: LevelState,
+
+    pub fn deinit(self: *State) void {
+        switch (self.*) {
+            .level => |*l| l.deinit(),
+        }
+    }
+};
+
 allocator: Allocator,
-assets: Assets = .{},
-angle: f32 = 0,
-position: ray.Vector2 = undefined,
+assets: Assets = undefined,
+state: State = undefined,
 
 pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {
@@ -28,6 +39,9 @@ pub fn init(self: *Game, init_window: bool) !void {
     }
 
     try self.assets.init();
+
+    const level = try LevelState.init(self.allocator, &levels.test1, self.assets);
+    self.state = .{ .level = level };
 }
 
 // Exported functions can't return zig errors, wrap regular init function.
@@ -36,8 +50,10 @@ pub export fn initWrapper(self: *Game, init_window: bool) c_int {
     return 0;
 }
 
-pub fn deinit(game: *Game, deinit_window: bool) void {
-    game.assets.deinit();
+pub fn deinit(self: *Game, deinit_window: bool) void {
+    self.state.deinit();
+
+    self.assets.deinit();
 
     if (deinit_window) {
         ray.CloseWindow();
@@ -45,13 +61,9 @@ pub fn deinit(game: *Game, deinit_window: bool) void {
 }
 
 pub fn update(self: *Game) !void {
-    const math = std.math;
-
-    self.angle += 2;
-    self.position = .{
-        .x = center.x + radius * @cos(math.degreesToRadians(self.angle)),
-        .y = center.y - radius * @sin(math.degreesToRadians(self.angle)),
-    };
+    switch (self.state) {
+        .level => |*l| try l.update(),
+    }
 
     try self.draw();
 }
@@ -66,20 +78,7 @@ fn draw(self: Game) !void {
     ray.BeginDrawing();
     defer ray.EndDrawing();
 
-    ray.ClearBackground(background_color);
-
-    const texture = self.assets.fox;
-    const source: ray.Rectangle = .{
-        .x = 0,
-        .y = 0,
-        .width = @floatFromInt(texture.width),
-        .height = @floatFromInt(texture.height),
-    };
-    const destination: ray.Rectangle = .{
-        .x = self.position.x - scale * @as(f32, @floatFromInt(texture.width)) / 2,
-        .y = self.position.y - scale * @as(f32, @floatFromInt(texture.height)) / 2,
-        .width = scale * @as(f32, @floatFromInt(texture.width)),
-        .height = scale * @as(f32, @floatFromInt(texture.height)),
-    };
-    ray.DrawTexturePro(texture, source, destination, .{ .x = 0, .y = 0 }, 0, ray.WHITE);
+    switch (self.state) {
+        .level => |l| l.draw(self),
+    }
 }

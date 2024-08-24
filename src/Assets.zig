@@ -26,12 +26,12 @@ const assets = .{
         .unload_fn = ray.UnloadTexture,
         .directory = "sprites/",
         .assets = &.{
-            .{ "fox", "fox.png" },
+            .{ "wall", "wall.png" },
         },
     },
 };
 
-fox: Texture2D = undefined,
+wall: Texture2D,
 
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {
