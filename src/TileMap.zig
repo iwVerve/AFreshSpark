@@ -203,7 +203,7 @@ fn propagateAttemptedDirection(self: *TileMap) void {
                 .x = position.x + offset.x,
                 .y = position.y + offset.y,
             }) orelse continue;
-            const effective_target = self.getEffectivePosition(target) orelse continue;
+            const effective_target = self.getEffectivePosition(target, object.attempted_direction.?) orelse continue;
 
             const target_objects = &.{
                 self.getObjectAtPosition(target),
@@ -235,7 +235,7 @@ fn resolveMovement(self: *TileMap) void {
                 .x = position.x + offset.x,
                 .y = position.y + offset.y,
             }) orelse continue;
-            const effective_target = self.getEffectivePosition(target) orelse unreachable;
+            const effective_target = self.getEffectivePosition(target, object.attempted_direction.?) orelse unreachable;
 
             const move_to = blk: {
                 if (self.getObjectAtPosition(target) == null) {
@@ -308,16 +308,23 @@ fn checkWin(self: TileMap) bool {
     return false;
 }
 
-fn getEffectivePosition(self: TileMap, position: anytype) ?UVector2 {
+fn getEffectivePosition(self: TileMap, position: anytype, direction: util.Direction) ?UVector2 {
     const u_position = util.vec2Cast(UVector2, position) orelse return null;
+    const offset = direction.toVector2(IVector2);
 
     for (self.prototype.connections) |connection| {
-        if (u_position.x == connection.a.x and u_position.y == connection.a.y) {
-            return connection.b;
-        }
-        if (u_position.x == connection.b.x and u_position.y == connection.b.y) {
-            return connection.a;
-        }
+        const target = if (u_position.x == connection.a.x and u_position.y == connection.a.y)
+            connection.b
+        else if (u_position.x == connection.b.x and u_position.y == connection.b.y)
+            connection.a
+        else
+            continue;
+        const i_target = util.vec2Cast(IVector2, target) orelse return null;
+        const result: IVector2 = .{
+            .x = i_target.x + offset.x,
+            .y = i_target.y + offset.y,
+        };
+        return util.vec2Cast(UVector2, result) orelse null;
     }
 
     return u_position;
