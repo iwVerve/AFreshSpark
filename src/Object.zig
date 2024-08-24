@@ -10,59 +10,50 @@ const UVector2 = util.UVector2;
 
 const Object = @This();
 
-pub const Prototype = struct {
-    has_control: bool,
-    board_position: UVector2 = undefined,
-    // Weird hack but probably required one way or another without a static game var.
-    texture_name: []const u8,
-    texture: ray.Texture2D = undefined,
-
-    pub fn init(prototype: Prototype, board_position: UVector2) Prototype {
-        var copy = prototype;
-        copy.board_position = board_position;
-        return copy;
-    }
-
-    pub const prototypes = .{
-        block,
-        player,
-    };
-
-    pub const block: Prototype = .{
-        .has_control = false,
-        .texture_name = "wall",
-    };
-
-    pub const player: Prototype = .{
-        .has_control = true,
-        .texture_name = "wall",
-    };
+pub const ObjectType = enum {
+    player,
+    block,
 };
 
-prototype: Prototype,
-board_position: UVector2 = undefined,
-world_position: ray.Vector2 = undefined,
-texture: ray.Texture2D = undefined,
+pub const Prototype = struct {
+    object_type: ObjectType,
+    board_position: UVector2 = undefined,
 
-pub fn init(prototype: Prototype, assets: Assets) Object {
-    const board_position = prototype.board_position;
-    const world_position = getTargetWorldPosition(board_position);
-    // const texture = @field(assets, prototype.texture_name);
+    pub fn init(self: *const Prototype, assets: Assets) Object {
+        const ObjectData = struct {
+            texture: ray.Texture2D,
+            has_control: bool,
+        };
 
-    var texture: ray.Texture2D = undefined;
-    // Weird!
-    inline for (Prototype.prototypes) |prototype_compare| {
-        if (std.mem.eql(u8, prototype.texture_name, prototype_compare.texture_name)) {
-            texture = @field(assets, prototype_compare.texture_name);
-        }
+        const data: ObjectData = switch (self.object_type) {
+            .player => .{
+                .texture = assets.wall,
+                .has_control = true,
+            },
+            .block => .{
+                .texture = assets.wall,
+                .has_control = false,
+            },
+        };
+
+        return .{
+            .prototype = self,
+            .board_position = self.board_position,
+            .world_position = getTargetWorldPosition(self.board_position),
+            .texture = data.texture,
+            .has_control = data.has_control,
+        };
     }
+};
 
-    return .{
-        .prototype = prototype,
-        .board_position = board_position,
-        .world_position = world_position,
-        .texture = texture,
-    };
+prototype: *const Prototype,
+board_position: UVector2,
+world_position: ray.Vector2,
+texture: ray.Texture2D,
+has_control: bool,
+
+pub fn init(prototype: *const Prototype, assets: Assets) Object {
+    return prototype.init(assets);
 }
 
 pub fn update(self: *Object) void {
@@ -85,6 +76,6 @@ fn lerpWorldPosition(self: *Object) void {
     self.world_position.y = lerp(self.world_position.y, target.y, lerp_factor);
 }
 
-pub fn draw(self: *Object, color: ray.Color) void {
-    ray.DrawTextureV(self.prototype.texture, self.world_position, color);
+pub fn draw(self: Object, color: ray.Color) void {
+    ray.DrawTextureV(self.texture, self.world_position, color);
 }

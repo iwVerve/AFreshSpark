@@ -48,7 +48,7 @@ objects: ArrayList(Object),
 pub fn init(prototype: *const Prototype, assets: Assets, allocator: Allocator) !TileMap {
     var objects = ArrayList(Object).init(allocator);
     for (prototype.objects) |object_prototype| {
-        const object = Object.init(object_prototype, assets);
+        const object = Object.init(&object_prototype, assets);
         try objects.append(object);
     }
 
@@ -67,4 +67,7 @@ pub fn draw(self: TileMap, game: Game) void {
     defer ray.EndMode2D();
 
     self.prototype.draw(game);
+    for (self.objects.items) |object| {
+        object.draw(self.prototype.colors.foreground);
+    }
 }

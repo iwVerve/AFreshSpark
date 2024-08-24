@@ -67,7 +67,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .height = height,
     };
 
-    const player = Object.Prototype.player.init(.{ .x = 1, .y = 1 });
+    const player: Object.Prototype = .{ .object_type = .player, .board_position = .{ .x = 1, .y = 1 } };
     const objects = &.{player};
 
     const width_px: comptime_float = @floatFromInt(config.tile_size * width);
