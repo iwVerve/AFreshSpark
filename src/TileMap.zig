@@ -287,6 +287,9 @@ fn resolveButtons(self: *TileMap) void {
     blk: for (self.buttons.items) |button| {
         const door = &self.objects.items[button.door];
         for (self.objects.items) |object| {
+            if (!object.charged) {
+                continue;
+            }
             if (util.vec2Eql(object.board_position, button.board_position)) {
                 door.open = true;
                 continue :blk;

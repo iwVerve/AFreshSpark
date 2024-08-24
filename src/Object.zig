@@ -33,6 +33,7 @@ pub const Prototype = struct {
             movable: bool = true,
             draw_layer: DrawLayer = .default,
             open_texture: ray.Texture2D = undefined,
+            charged: bool = false,
         };
 
         const data: ObjectData = switch (self.object_type) {
@@ -43,6 +44,7 @@ pub const Prototype = struct {
             },
             .block => .{
                 .texture = assets.block,
+                .charged = true,
             },
             .door => .{
                 .texture = assets.door,
@@ -59,6 +61,7 @@ pub const Prototype = struct {
             .movable = data.movable,
             .draw_layer = data.draw_layer,
             .open_texture = data.open_texture,
+            .charged = data.charged,
         };
     }
 };
@@ -75,6 +78,7 @@ draw_layer: DrawLayer = .default,
 texture: ray.Texture2D,
 has_control: bool,
 movable: bool,
+charged: bool,
 
 pub fn init(prototype: *const Prototype, assets: *Assets) Object {
     return prototype.init(assets);
