@@ -28,7 +28,7 @@ pub var init_fn: if (build_options.static) void else *@TypeOf(Game.initWrapper) 
 pub var update_fn: if (build_options.static) void else *@TypeOf(Game.updateWrapper) = undefined;
 
 pub fn update(game: *Game, allocator: Allocator) !void {
-    if (config.reload_key != null and ray.IsKeyPressed(config.reload_key.?)) {
+    if (config.game_reload_key != null and ray.IsKeyPressed(config.game_reload_key.?)) {
         // Force reload
         dll_change_detected = true;
     }
@@ -53,7 +53,7 @@ pub fn update(game: *Game, allocator: Allocator) !void {
         try spawnAssetWatcher();
     }
 
-    if (config.restart_key != null and ray.IsKeyPressed(config.restart_key.?)) {
+    if (config.game_restart_key != null and ray.IsKeyPressed(config.game_restart_key.?)) {
         // Restart game
         game.deinit(false);
         game.* = .{

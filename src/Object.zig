@@ -7,6 +7,7 @@ const Assets = @import("Assets.zig");
 const config = @import("config.zig");
 
 const UVector2 = util.UVector2;
+const Direction = util.Direction;
 
 const Object = @This();
 
@@ -27,11 +28,11 @@ pub const Prototype = struct {
 
         const data: ObjectData = switch (self.object_type) {
             .player => .{
-                .texture = assets.wall,
+                .texture = assets.player,
                 .has_control = true,
             },
             .block => .{
-                .texture = assets.wall,
+                .texture = assets.block,
                 .has_control = false,
             },
         };
@@ -51,6 +52,7 @@ board_position: UVector2,
 world_position: ray.Vector2,
 texture: ray.Texture2D,
 has_control: bool,
+attempted_direction: ?Direction = null,
 
 pub fn init(prototype: *const Prototype, assets: Assets) Object {
     return prototype.init(assets);
@@ -60,7 +62,7 @@ pub fn update(self: *Object) void {
     self.lerpWorldPosition();
 }
 
-pub fn getTargetWorldPosition(vector: UVector2) ray.Vector2 {
+fn getTargetWorldPosition(vector: UVector2) ray.Vector2 {
     return .{
         .x = @floatFromInt(config.tile_size * vector.x),
         .y = @floatFromInt(config.tile_size * vector.y),
@@ -74,6 +76,10 @@ fn lerpWorldPosition(self: *Object) void {
     const target = getTargetWorldPosition(self.board_position);
     self.world_position.x = lerp(self.world_position.x, target.x, lerp_factor);
     self.world_position.y = lerp(self.world_position.y, target.y, lerp_factor);
+}
+
+pub fn snap(self: *Object) void {
+    self.world_position = getTargetWorldPosition(self.board_position);
 }
 
 pub fn draw(self: Object, color: ray.Color) void {

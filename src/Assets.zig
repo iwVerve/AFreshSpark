@@ -27,11 +27,15 @@ const assets = .{
         .directory = "sprites/",
         .assets = &.{
             .{ "wall", "wall.png" },
+            .{ "player", "player.png" },
+            .{ "block", "block.png" },
         },
     },
 };
 
 wall: Texture2D,
+player: Texture2D,
+block: Texture2D,
 
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {
@@ -41,6 +45,9 @@ pub fn init(self: *Assets) !void {
             const field = &@field(self, field_name);
 
             field.* = asset_data.load_fn(path);
+
+            // TODO(verve): Will break once we're not only loading textures.
+            ray.SetTextureFilter(field.*, ray.TEXTURE_FILTER_BILINEAR);
 
             if (field.id <= 0) {
                 return error.AssetLoadError;

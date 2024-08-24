@@ -15,8 +15,8 @@ pub const install_dirs = &.{
 };
 
 // Hotreloading only. Set to null to disable.
-pub const restart_key: ?c_int = ray.KEY_F2;
-pub const reload_key: ?c_int = ray.KEY_F3;
+pub const game_restart_key: ?c_int = ray.KEY_F2;
+pub const game_reload_key: ?c_int = ray.KEY_F3;
 
 // GAME CONFIG
 
@@ -26,3 +26,9 @@ pub const resolution = .{
 };
 
 pub const tile_size = 64;
+
+pub const up_keys = .{ ray.KEY_UP, ray.KEY_W };
+pub const right_keys = .{ ray.KEY_RIGHT, ray.KEY_D };
+pub const down_keys = .{ ray.KEY_DOWN, ray.KEY_S };
+pub const left_keys = .{ ray.KEY_LEFT, ray.KEY_A };
+pub const restart_key = ray.KEY_R;

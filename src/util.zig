@@ -10,19 +10,40 @@ pub const IVector2 = struct {
     y: isize,
 };
 
-pub fn vec2Cast(T: type, vector: anytype) T {
-    const vector_type_info = @typeInfo(@TypeOf(vector.x));
+pub fn vec2Cast(T: type, vector: anytype) ?T {
+    const FieldType = @TypeOf(vector.x);
+    const field_type_info = @typeInfo(FieldType);
     const t_type_info = @typeInfo(T);
+    const TFieldType = t_type_info.Struct.fields[0].type;
+    const t_field_type_info = @typeInfo(TFieldType);
 
-    const both_int = vector_type_info == .Int and t_type_info == .Int;
-    const both_comptime_int = vector_type_info == .ComptimeInt and t_type_info == .ComptimeInt;
+    const field_int = field_type_info == .Int or field_type_info == .ComptimeInt;
+    const t_int = t_field_type_info == .Int or t_field_type_info == .ComptimeInt;
 
-    if (both_int or both_comptime_int) {
+    const cast = std.math.cast;
+
+    if (field_int and t_int) {
         return .{
-            .x = @intCast(vector.x),
-            .y = @intCast(vector.y),
+            .x = cast(TFieldType, vector.x) orelse return null,
+            .y = cast(TFieldType, vector.y) orelse return null,
         };
     } else {
         @panic("Unimplemented");
     }
 }
+
+pub const Direction = enum {
+    up,
+    right,
+    down,
+    left,
+
+    pub fn toVector2(self: Direction, T: type) T {
+        return switch (self) {
+            .up => .{ .x = 0, .y = -1 },
+            .right => .{ .x = 1, .y = 0 },
+            .down => .{ .x = 0, .y = 1 },
+            .left => .{ .x = -1, .y = 0 },
+        };
+    }
+};
