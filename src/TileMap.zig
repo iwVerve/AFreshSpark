@@ -217,6 +217,7 @@ fn propagateAttemptedDirection(self: *TileMap) void {
 
 fn resolveMovement(self: *TileMap) void {
     var updated = true;
+    var strict = true;
     while (updated) {
         updated = false;
         for (self.objects.items) |*object| {
@@ -231,18 +232,27 @@ fn resolveMovement(self: *TileMap) void {
             }) orelse continue;
             const effective_target = self.getEffectivePosition(target) orelse unreachable;
 
-            if (self.getObjectAtPosition(effective_target) != null) {
+            const move_to = blk: {
+                if (self.getObjectAtPosition(target) == null) {
+                    if (self.getObjectAtPosition(effective_target) == null) {
+                        break :blk effective_target;
+                    }
+                    if (!strict) {
+                        break :blk target;
+                    }
+                    continue;
+                }
                 continue;
-            }
+            };
 
-            const tile = self.getTile(effective_target) orelse continue;
+            const tile = self.getTile(move_to) orelse continue;
             if (tile.wall) {
                 continue;
             }
 
-            if (target.x != effective_target.x or target.y != effective_target.y) {
-                const offset_x = config.tile_size * (@as(f32, @floatFromInt(effective_target.x)) - @as(f32, @floatFromInt(target.x)));
-                const offset_y = config.tile_size * (@as(f32, @floatFromInt(effective_target.y)) - @as(f32, @floatFromInt(target.y)));
+            if (target.x != move_to.x or target.y != move_to.y) {
+                const offset_x = config.tile_size * (@as(f32, @floatFromInt(move_to.x)) - @as(f32, @floatFromInt(target.x)));
+                const offset_y = config.tile_size * (@as(f32, @floatFromInt(move_to.y)) - @as(f32, @floatFromInt(target.y)));
                 object.world_position.x += offset_x;
                 object.world_position.y += offset_y;
 
@@ -252,9 +262,15 @@ fn resolveMovement(self: *TileMap) void {
                     .y = -offset_y,
                 };
             }
-            object.board_position = util.vec2Cast(UVector2, effective_target) orelse unreachable;
+            std.debug.print("pos: {} strict: {}\n", .{ object.board_position, strict });
+            object.board_position = util.vec2Cast(UVector2, move_to) orelse unreachable;
             object.attempted_direction = null;
             updated = true;
+            strict = true;
+        }
+        if (!updated and strict) {
+            updated = true;
+            strict = false;
         }
     }
 
