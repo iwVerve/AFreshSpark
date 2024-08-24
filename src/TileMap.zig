@@ -262,7 +262,6 @@ fn resolveMovement(self: *TileMap) void {
                     .y = -offset_y,
                 };
             }
-            std.debug.print("pos: {} strict: {}\n", .{ object.board_position, strict });
             object.board_position = util.vec2Cast(UVector2, move_to) orelse unreachable;
             object.attempted_direction = null;
             updated = true;
