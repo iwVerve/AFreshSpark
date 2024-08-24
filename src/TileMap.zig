@@ -205,12 +205,13 @@ fn propagateAttemptedDirection(self: *TileMap) void {
             }) orelse continue;
             const effective_target = self.getEffectivePosition(target, object.attempted_direction.?) orelse continue;
 
-            const target_objects = &.{
-                self.getObjectAtPosition(target),
-                self.getObjectAtPosition(effective_target),
+            const target_positions = &.{
+                target,
+                effective_target,
             };
 
-            inline for (target_objects) |target_object| {
+            inline for (target_positions) |target_position| {
+                const target_object = self.getObjectAtPosition(target_position);
                 if (target_object != null and target_object.?.attempted_direction == null and target_object.?.movable) {
                     target_object.?.attempted_direction = object.attempted_direction;
                     updated = true;
@@ -240,10 +241,16 @@ fn resolveMovement(self: *TileMap) void {
             const move_to = blk: {
                 if (self.getObjectAtPosition(target) == null) {
                     if (self.getObjectAtPosition(effective_target) == null) {
-                        break :blk effective_target;
+                        const tile = self.getTile(effective_target) orelse continue;
+                        if (!tile.wall) {
+                            break :blk effective_target;
+                        }
                     }
                     if (!strict) {
-                        break :blk target;
+                        const tile = self.getTile(target) orelse continue;
+                        if (!tile.wall) {
+                            break :blk target;
+                        }
                     }
                     continue;
                 }
