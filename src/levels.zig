@@ -15,8 +15,8 @@ pub const test1 = parse(.{
     .tiles =
     \\#########
     \\#P......#
-    \\#.X.....#
-    \\#.......#
+    \\#...X...#
+    \\#...X...#
     \\#.......#
     \\#.......#
     \\#########
@@ -38,6 +38,12 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
     var tiles: []const []const Tile = &.{};
     var tile_row: []const Tile = &.{};
     var objects: []const Object.Prototype = &.{};
+
+    const connection: TileMap.Prototype.Connection = .{
+        .a = .{ .x = 2, .y = 3 },
+        .b = .{ .x = 6, .y = 3 },
+    };
+    const connections = &.{connection};
 
     for (level.tiles) |char| {
         if (char == '\n') {
@@ -121,5 +127,6 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .camera = camera,
         .objects = objects,
         .colors = level.colors,
+        .connections = connections,
     };
 }

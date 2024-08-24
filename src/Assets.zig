@@ -29,6 +29,7 @@ const assets = .{
             .{ "wall", "wall.png" },
             .{ "player", "player.png" },
             .{ "block", "block.png" },
+            .{ "connection_end", "connection_end.png" },
         },
     },
 };
@@ -36,6 +37,7 @@ const assets = .{
 wall: Texture2D,
 player: Texture2D,
 block: Texture2D,
+connection_end: Texture2D,
 
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {
