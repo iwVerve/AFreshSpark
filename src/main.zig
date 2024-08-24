@@ -61,5 +61,5 @@ pub fn main() !void {
 var emscripten_game_ptr: ?*Game = null;
 
 fn emscriptenUpdate() callconv(.C) void {
-    Game.update(emscripten_game_ptr.?);
+    Game.update(emscripten_game_ptr.?) catch {};
 }
