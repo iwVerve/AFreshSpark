@@ -215,10 +215,10 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
 
     const width_px: comptime_float = @floatFromInt(config.tile_size * width);
     const height_px: comptime_float = @floatFromInt(config.tile_size * height);
-    const ratio = config.resolution.width / config.resolution.height;
+    const ratio = @as(comptime_float, config.resolution.width) / @as(comptime_float, config.resolution.height);
 
     const camera_data = blk: {
-        if (ratio * height_px > width_px) {
+        if (ratio * height_px < width_px) {
             const zoom = @as(f32, @floatFromInt(config.resolution.width)) / width_px;
             break :blk .{
                 .target = .{
@@ -226,6 +226,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
                     .y = -(config.resolution.height / zoom - height_px) / 2,
                 },
                 .zoom = zoom,
+                .wide_camera = false,
             };
         } else {
             const zoom = @as(f32, @floatFromInt(config.resolution.height)) / height_px;
@@ -235,6 +236,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
                     .y = 0,
                 },
                 .zoom = zoom,
+                .wide_camera = true,
             };
         }
     };
@@ -246,6 +248,37 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .rotation = 0,
     };
 
+    const outside_rectangles = if (camera_data.wide_camera)
+        &.{
+            ray.Rectangle{
+                .x = camera.target.x,
+                .y = camera.target.y,
+                .width = -camera.target.x,
+                .height = height_px,
+            },
+            ray.Rectangle{
+                .x = width_px,
+                .y = camera.target.y,
+                .width = -camera.target.x,
+                .height = height_px,
+            },
+        }
+    else
+        &.{
+            ray.Rectangle{
+                .x = camera.target.x,
+                .y = camera.target.y,
+                .width = width_px,
+                .height = -camera.target.y,
+            },
+            ray.Rectangle{
+                .x = camera.target.x,
+                .y = height_px,
+                .width = width_px,
+                .height = -camera.target.y,
+            },
+        };
+
     return .{
         .options = options,
         .tiles = tiles,
@@ -254,6 +287,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .colors = level.colors,
         .connections = connections,
         .buttons = buttons,
+        .outside_rectangles = outside_rectangles,
     };
 }
 

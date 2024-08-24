@@ -67,12 +67,15 @@ pub const Prototype = struct {
     };
 
     options: Options,
-    camera: ray.Camera2D,
+    colors: Colors = .{},
+
     tiles: []const []const Tile,
     objects: []const Object.Prototype,
     connections: []const Connection,
     buttons: []const Button.Prototype,
-    colors: Colors = .{},
+
+    camera: ray.Camera2D,
+    outside_rectangles: []const ray.Rectangle,
 
     pub fn draw(self: *const Prototype, game: Game) void {
         for (self.tiles, 0..) |tile_row, tile_y| {
@@ -321,6 +324,10 @@ fn getObjectAtPosition(self: *TileMap, position: anytype) ?*Object {
 pub fn draw(self: TileMap, game: Game) void {
     ray.BeginMode2D(self.prototype.camera);
     defer ray.EndMode2D();
+
+    for (self.prototype.outside_rectangles) |rectangle| {
+        ray.DrawRectangleRec(rectangle, self.prototype.colors.foreground);
+    }
 
     self.prototype.draw(game);
     for (self.prototype.connections) |connection| {
