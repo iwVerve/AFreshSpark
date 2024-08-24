@@ -61,8 +61,9 @@ pub fn init(self: *Assets) !void {
 
             field.* = asset_data.load_fn(path);
 
-            // TODO(verve): Will break once we're not only loading textures.
-            ray.SetTextureFilter(field.*, ray.TEXTURE_FILTER_BILINEAR);
+            if (@TypeOf(field.*) == ray.Texture2D) {
+                ray.SetTextureFilter(field.*, ray.TEXTURE_FILTER_BILINEAR);
+            }
 
             if (field.id <= 0) {
                 return error.AssetLoadError;
