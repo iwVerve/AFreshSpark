@@ -20,7 +20,7 @@ pub const Prototype = struct {
     object_type: ObjectType,
     board_position: UVector2 = undefined,
 
-    pub fn init(self: *const Prototype, assets: Assets) Object {
+    pub fn init(self: *const Prototype, assets: *Assets) Object {
         const ObjectData = struct {
             texture: ray.Texture2D,
             has_control: bool,
@@ -56,7 +56,7 @@ texture: ray.Texture2D,
 has_control: bool,
 attempted_direction: ?Direction = null,
 
-pub fn init(prototype: *const Prototype, assets: Assets) Object {
+pub fn init(prototype: *const Prototype, assets: *Assets) Object {
     return prototype.init(assets);
 }
 

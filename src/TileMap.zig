@@ -86,9 +86,11 @@ pub const Prototype = struct {
 };
 
 prototype: *const Prototype,
+allocator: Allocator,
+assets: *Assets,
 objects: ArrayList(Object),
 
-pub fn init(prototype: *const Prototype, assets: Assets, allocator: Allocator) !TileMap {
+pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) !TileMap {
     var objects = ArrayList(Object).init(allocator);
     for (prototype.objects) |object_prototype| {
         const object = Object.init(&object_prototype, assets);
@@ -97,6 +99,8 @@ pub fn init(prototype: *const Prototype, assets: Assets, allocator: Allocator) !
 
     return .{
         .prototype = prototype,
+        .allocator = allocator,
+        .assets = assets,
         .objects = objects,
     };
 }
@@ -105,7 +109,12 @@ pub fn deinit(self: *TileMap) void {
     self.objects.deinit();
 }
 
-pub fn update(self: *TileMap) void {
+pub fn update(self: *TileMap) !void {
+    if (ray.IsKeyPressed(config.restart_key)) {
+        self.deinit();
+        self.* = try TileMap.init(self.prototype, self.assets, self.allocator);
+    }
+
     const input_directions = .{
         .{ config.up_keys, Direction.up },
         .{ config.right_keys, Direction.right },

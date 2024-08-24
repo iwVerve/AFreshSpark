@@ -40,7 +40,7 @@ pub fn init(self: *Game, init_window: bool) !void {
 
     try self.assets.init();
 
-    const level = try LevelState.init(self.allocator, &levels.test1, self.assets);
+    const level = try LevelState.init(self.allocator, &levels.test1, &self.assets);
     self.state = .{ .level = level };
 }
 
@@ -60,9 +60,9 @@ pub fn deinit(self: *Game, deinit_window: bool) void {
     }
 }
 
-pub fn update(self: *Game) void {
+pub fn update(self: *Game) !void {
     switch (self.state) {
-        .level => |*l| l.update(),
+        .level => |*l| try l.update(),
     }
 
     try self.draw();
@@ -70,7 +70,7 @@ pub fn update(self: *Game) void {
 
 // Exported functions can't return zig errors, wrap regular update function.
 pub export fn updateWrapper(self: *Game) c_int {
-    self.update(); // catch return 1;
+    self.update() catch return 1;
     return 0;
 }
 
