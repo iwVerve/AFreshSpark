@@ -14,6 +14,12 @@ const Object = @This();
 pub const ObjectType = enum {
     player,
     block,
+    door,
+};
+
+pub const DrawLayer = enum {
+    player,
+    default,
 };
 
 pub const Prototype = struct {
@@ -23,38 +29,52 @@ pub const Prototype = struct {
     pub fn init(self: *const Prototype, assets: *Assets) Object {
         const ObjectData = struct {
             texture: ray.Texture2D,
-            has_control: bool,
+            has_control: bool = false,
+            movable: bool = true,
+            draw_layer: DrawLayer = .default,
+            open_texture: ray.Texture2D = undefined,
         };
 
         const data: ObjectData = switch (self.object_type) {
             .player => .{
                 .texture = assets.player,
                 .has_control = true,
+                .draw_layer = .player,
             },
             .block => .{
                 .texture = assets.block,
-                .has_control = false,
+            },
+            .door => .{
+                .texture = assets.door,
+                .movable = false,
+                .open_texture = assets.door_open,
             },
         };
 
         return .{
-            .prototype = self,
             .board_position = self.board_position,
             .world_position = getTargetWorldPosition(self.board_position),
             .texture = data.texture,
             .has_control = data.has_control,
+            .movable = data.movable,
+            .draw_layer = data.draw_layer,
+            .open_texture = data.open_texture,
         };
     }
 };
 
-prototype: *const Prototype,
 board_position: UVector2,
 world_position: ray.Vector2,
 lerp_progress: f32 = 1,
 offset: ray.Vector2 = .{},
+attempted_direction: ?Direction = null,
+open: bool = false,
+open_texture: ray.Texture2D = undefined,
+draw_layer: DrawLayer = .default,
+
 texture: ray.Texture2D,
 has_control: bool,
-attempted_direction: ?Direction = null,
+movable: bool,
 
 pub fn init(prototype: *const Prototype, assets: *Assets) Object {
     return prototype.init(assets);
@@ -92,5 +112,11 @@ pub fn draw(self: Object, color: ray.Color) void {
         self.world_position
     else
         ray.Vector2Add(self.world_position, self.offset);
-    ray.DrawTextureV(self.texture, draw_position, color);
+
+    const texture = if (self.open)
+        self.open_texture
+    else
+        self.texture;
+
+    ray.DrawTextureV(texture, draw_position, color);
 }

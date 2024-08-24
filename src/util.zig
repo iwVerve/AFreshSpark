@@ -10,6 +10,13 @@ pub const IVector2 = struct {
     y: isize,
 };
 
+pub fn vec2Eql(a: anytype, b: anytype) bool {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vec2Eql passed arguents of different types.");
+    }
+    return (a.x == b.x and a.y == b.y);
+}
+
 pub fn vec2Cast(T: type, vector: anytype) ?T {
     const FieldType = @TypeOf(vector.x);
     const field_type_info = @typeInfo(FieldType);

@@ -8,6 +8,7 @@ const Tile = @import("Tile.zig");
 const config = @import("config.zig");
 const Object = @import("Object.zig");
 const util = @import("util.zig");
+const Button = @import("Button.zig");
 
 const UVector2 = util.UVector2;
 
@@ -15,8 +16,8 @@ pub const test1 = parse(.{
     .tiles =
     \\#########
     \\#P......#
-    \\#...X...#
     \\#.......#
+    \\#...X...#
     \\#...X...#
     \\#.......#
     \\#########
@@ -24,8 +25,8 @@ pub const test1 = parse(.{
     .colors = .{},
     .connections = &.{
         \\.........
+        \\.........
         \\...l-j...
-        \\...|.|...
         \\..XJ.LX..
         \\.........
         \\.........
@@ -38,6 +39,17 @@ pub const test1 = parse(.{
         \\.........
         \\...X.X...
         \\...L-J...
+        ,
+    },
+    .buttons = &.{
+        \\.........
+        \\..B---D..
+        \\.........
+        \\.........
+        \\.........
+        \\.........
+        \\.........
+        ,
     },
 });
 
@@ -45,6 +57,7 @@ const LevelDefition = struct {
     tiles: []const u8,
     colors: TileMap.Prototype.Colors = .{},
     connections: []const []const u8,
+    buttons: []const []const u8,
 };
 
 fn parse(comptime level: LevelDefition) TileMap.Prototype {
@@ -101,7 +114,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         var connection_height: usize = 0;
         var first_end: ?UVector2 = null;
         var second_end: ?UVector2 = null;
-        var lines: []const TileMap.Prototype.Connection.Line = &.{};
+        var lines: []const TileMap.Prototype.Line = &.{};
 
         for (connection_string) |char| {
             if (char == '\n') {
@@ -122,21 +135,8 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
                 connection_width += 1;
             } else {
                 const position: UVector2 = .{ .x = connection_width, .y = connection_height };
-                blk: {
-                    const line_type: TileMap.Prototype.Connection.LineType = switch (char) {
-                        '-' => .horizontal,
-                        '|' => .vertical,
-                        'L' => .up_right,
-                        'J' => .up_left,
-                        'l' => .down_right,
-                        'j' => .down_left,
-                        '.' => break :blk,
-                        else => @compileError(std.fmt.comptimePrint("Invalid connection char {c} in string:\n{s}\n", .{ char, connection_string })),
-                    };
-                    const line: TileMap.Prototype.Connection.Line = .{
-                        .position = position,
-                        .line_type = line_type,
-                    };
+                const maybe_line = parseLine(char, position);
+                if (maybe_line) |line| {
                     lines = lines ++ .{line};
                 }
                 connection_width += 1;
@@ -154,6 +154,58 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
             .lines = lines,
         };
         connections = connections ++ .{connection};
+    }
+
+    var buttons: []const Button.Prototype = &.{};
+    for (level.buttons) |button_string| {
+        var button_width: usize = 0;
+        var button_height: usize = 0;
+
+        var button_position: ?UVector2 = null;
+        var door_position: ?UVector2 = null;
+        var lines: []const TileMap.Prototype.Line = &.{};
+
+        for (button_string) |char| {
+            if (char == '\n') {
+                if (button_width != width) {
+                    @compileError("Button string isn't right width.");
+                }
+                button_width = 0;
+                button_height += 1;
+            } else if (char == 'B') {
+                if (button_position != null) {
+                    @compileError("Button string has multiple buttons.");
+                }
+                button_position = .{ .x = button_width, .y = button_height };
+                button_width += 1;
+            } else if (char == 'D') {
+                if (door_position != null) {
+                    @compileError("Button string has multiple doors.");
+                }
+                door_position = .{ .x = button_width, .y = button_height };
+                button_width += 1;
+            } else {
+                const position: UVector2 = .{ .x = button_width, .y = button_height };
+                const maybe_line = parseLine(char, position);
+                if (maybe_line) |line| {
+                    lines = lines ++ .{line};
+                }
+                button_width += 1;
+            }
+        }
+
+        if (button_position == null) {
+            @compileError("Button string is missing button.");
+        }
+        if (door_position == null) {
+            @compileError("Button string is missing door.");
+        }
+        const button: Button.Prototype = .{
+            .button = button_position.?,
+            .door = door_position.?,
+            .lines = lines,
+        };
+        buttons = buttons ++ .{button};
     }
 
     const options: TileMap.Options = .{
@@ -201,5 +253,23 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
         .objects = objects,
         .colors = level.colors,
         .connections = connections,
+        .buttons = buttons,
+    };
+}
+
+fn parseLine(char: u8, position: UVector2) ?TileMap.Prototype.Line {
+    const line_type: TileMap.Prototype.LineType = switch (char) {
+        '-' => .horizontal,
+        '|' => .vertical,
+        'L' => .up_right,
+        'J' => .up_left,
+        'l' => .down_right,
+        'j' => .down_left,
+        '.' => return null,
+        else => @compileError(std.fmt.comptimePrint("Invalid connection char {c}.", .{char})),
+    };
+    return .{
+        .position = position,
+        .line_type = line_type,
     };
 }

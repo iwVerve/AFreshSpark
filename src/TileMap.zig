@@ -7,6 +7,7 @@ const Game = @import("Game.zig");
 const Object = @import("Object.zig");
 const Assets = @import("Assets.zig");
 const util = @import("util.zig");
+const Button = @import("Button.zig");
 
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
@@ -27,39 +28,39 @@ pub const Prototype = struct {
         foreground: ray.Color = .{ .r = 20, .g = 120, .b = 40, .a = 255 },
     };
 
+    pub const LineType = enum {
+        horizontal,
+        vertical,
+        up_right,
+        up_left,
+        down_right,
+        down_left,
+    };
+
+    pub const Line = struct {
+        line_type: LineType,
+        position: UVector2,
+
+        pub fn draw(self: Line, assets: Assets, color: ray.Color) void {
+            const texture = switch (self.line_type) {
+                .horizontal => assets.connection_h,
+                .vertical => assets.connection_v,
+                .up_right => assets.connection_ur,
+                .up_left => assets.connection_ul,
+                .down_right => assets.connection_dr,
+                .down_left => assets.connection_dl,
+            };
+
+            const position: ray.Vector2 = .{
+                .x = config.tile_size * @as(f32, @floatFromInt(self.position.x)),
+                .y = config.tile_size * @as(f32, @floatFromInt(self.position.y)),
+            };
+
+            ray.DrawTextureV(texture, position, color);
+        }
+    };
+
     pub const Connection = struct {
-        pub const LineType = enum {
-            horizontal,
-            vertical,
-            up_right,
-            up_left,
-            down_right,
-            down_left,
-        };
-
-        pub const Line = struct {
-            line_type: LineType,
-            position: UVector2,
-
-            pub fn draw(self: Line, assets: Assets, color: ray.Color) void {
-                const texture = switch (self.line_type) {
-                    .horizontal => assets.connection_h,
-                    .vertical => assets.connection_v,
-                    .up_right => assets.connection_ur,
-                    .up_left => assets.connection_ul,
-                    .down_right => assets.connection_dr,
-                    .down_left => assets.connection_dl,
-                };
-
-                const position: ray.Vector2 = .{
-                    .x = config.tile_size * @as(f32, @floatFromInt(self.position.x)),
-                    .y = config.tile_size * @as(f32, @floatFromInt(self.position.y)),
-                };
-
-                ray.DrawTextureV(texture, position, color);
-            }
-        };
-
         a: UVector2,
         b: UVector2,
         lines: []const Line,
@@ -70,6 +71,7 @@ pub const Prototype = struct {
     tiles: []const []const Tile,
     objects: []const Object.Prototype,
     connections: []const Connection,
+    buttons: []const Button.Prototype,
     colors: Colors = .{},
 
     pub fn draw(self: *const Prototype, game: Game) void {
@@ -89,12 +91,31 @@ prototype: *const Prototype,
 allocator: Allocator,
 assets: *Assets,
 objects: ArrayList(Object),
+buttons: ArrayList(Button),
 
 pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) !TileMap {
     var objects = ArrayList(Object).init(allocator);
+    errdefer objects.deinit();
     for (prototype.objects) |object_prototype| {
         const object = Object.init(&object_prototype, assets);
         try objects.append(object);
+    }
+
+    var buttons = ArrayList(Button).init(allocator);
+    errdefer buttons.deinit();
+    for (prototype.buttons) |button_prototype| {
+        const door_prototype: Object.Prototype = .{
+            .object_type = .door,
+            .board_position = button_prototype.door,
+        };
+        const door = door_prototype.init(assets);
+        try objects.append(door);
+
+        const button: Button = .{
+            .board_position = button_prototype.button,
+            .door = objects.items.len - 1,
+        };
+        try buttons.append(button);
     }
 
     return .{
@@ -102,11 +123,13 @@ pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) 
         .allocator = allocator,
         .assets = assets,
         .objects = objects,
+        .buttons = buttons,
     };
 }
 
 pub fn deinit(self: *TileMap) void {
     self.objects.deinit();
+    self.buttons.deinit();
 }
 
 pub fn update(self: *TileMap) !void {
@@ -140,6 +163,7 @@ fn takeTurn(self: *TileMap, direction: Direction) void {
     self.setControlledObjects(direction);
     self.propagateAttemptedDirection();
     self.resolveMovement();
+    self.resolveButtons();
 }
 
 fn snapObjects(self: *TileMap) void {
@@ -179,22 +203,11 @@ fn propagateAttemptedDirection(self: *TileMap) void {
             };
 
             inline for (target_objects) |target_object| {
-                if (target_object != null and target_object.?.attempted_direction == null) {
+                if (target_object != null and target_object.?.attempted_direction == null and target_object.?.movable) {
                     target_object.?.attempted_direction = object.attempted_direction;
                     updated = true;
                 }
             }
-
-            // for (self.objects.items) |*target_object| {
-            //     if (target_object.attempted_direction != null) {
-            //         continue;
-            //     }
-            //     const target_object_position = util.vec2Cast(IVector2, target_object.board_position) orelse continue;
-            //     if (target_object_position.x == effective_target.x and target_object_position.y == effective_target.y) {
-            //         target_object.attempted_direction = object.attempted_direction;
-            //         updated = true;
-            //     }
-            // }
         }
     }
 }
@@ -247,6 +260,19 @@ fn resolveMovement(self: *TileMap) void {
     }
 }
 
+fn resolveButtons(self: *TileMap) void {
+    blk: for (self.buttons.items) |button| {
+        const door = &self.objects.items[button.door];
+        for (self.objects.items) |object| {
+            if (util.vec2Eql(object.board_position, button.board_position)) {
+                door.open = true;
+                continue :blk;
+            }
+        }
+        door.open = false;
+    }
+}
+
 fn getEffectivePosition(self: TileMap, position: anytype) ?UVector2 {
     const u_position = util.vec2Cast(UVector2, position) orelse return null;
 
@@ -276,6 +302,9 @@ fn getObjectAtPosition(self: *TileMap, position: anytype) ?*Object {
     const cast = std.math.cast;
 
     for (self.objects.items) |*object| {
+        if (object.open) {
+            continue;
+        }
         if (cast(usize, position.x) orelse continue != object.board_position.x) {
             continue;
         }
@@ -308,7 +337,26 @@ pub fn draw(self: TileMap, game: Game) void {
             ray.DrawTextureV(game.assets.connection_end, position, self.prototype.colors.foreground);
         }
     }
+    for (self.prototype.buttons) |button| {
+        for (button.lines) |line| {
+            line.draw(game.assets, self.prototype.colors.foreground);
+        }
+
+        const position: ray.Vector2 = .{
+            .x = config.tile_size * @as(f32, @floatFromInt(button.button.x)),
+            .y = config.tile_size * @as(f32, @floatFromInt(button.button.y)),
+        };
+        ray.DrawTextureV(game.assets.button, position, self.prototype.colors.foreground);
+    }
+
+    self.drawObjectLayer(.default, self.prototype.colors.foreground);
+    self.drawObjectLayer(.player, self.prototype.colors.foreground);
+}
+
+fn drawObjectLayer(self: TileMap, layer: Object.DrawLayer, color: ray.Color) void {
     for (self.objects.items) |object| {
-        object.draw(self.prototype.colors.foreground);
+        if (object.draw_layer == layer) {
+            object.draw(color);
+        }
     }
 }
