@@ -17,12 +17,13 @@ pub const test1 = parse(.{
     \\#########
     \\#P......#
     \\#.......#
-    \\#...X...#
+    \\#...X....
     \\#...X...#
     \\#.......#
     \\#########
     ,
     .colors = .{},
+    .exit = .{ .x = 8, .y = 3 },
     .connections = &.{
         \\.........
         \\.........
@@ -56,6 +57,7 @@ pub const test1 = parse(.{
 const LevelDefition = struct {
     tiles: []const u8,
     colors: TileMap.Prototype.Colors = .{},
+    exit: UVector2,
     connections: []const []const u8,
     buttons: []const []const u8,
 };
@@ -281,6 +283,7 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
 
     return .{
         .options = options,
+        .exit = level.exit,
         .tiles = tiles,
         .camera = camera,
         .objects = objects,

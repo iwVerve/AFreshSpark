@@ -69,6 +69,7 @@ pub const Prototype = struct {
     options: Options,
     colors: Colors = .{},
 
+    exit: UVector2,
     tiles: []const []const Tile,
     objects: []const Object.Prototype,
     connections: []const Connection,
@@ -167,6 +168,10 @@ fn takeTurn(self: *TileMap, direction: Direction) void {
     self.propagateAttemptedDirection();
     self.resolveMovement();
     self.resolveButtons();
+
+    if (self.checkWin()) {
+        std.debug.print("Win!\n", .{});
+    }
 }
 
 fn snapObjects(self: *TileMap) void {
@@ -289,6 +294,15 @@ fn resolveButtons(self: *TileMap) void {
         }
         door.open = false;
     }
+}
+
+fn checkWin(self: TileMap) bool {
+    for (self.objects.items) |object| {
+        if (util.vec2Eql(object.board_position, self.prototype.exit)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 fn getEffectivePosition(self: TileMap, position: anytype) ?UVector2 {
