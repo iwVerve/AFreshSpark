@@ -28,8 +28,41 @@ pub const Prototype = struct {
     };
 
     pub const Connection = struct {
+        pub const LineType = enum {
+            horizontal,
+            vertical,
+            up_right,
+            up_left,
+            down_right,
+            down_left,
+        };
+
+        pub const Line = struct {
+            line_type: LineType,
+            position: UVector2,
+
+            pub fn draw(self: Line, assets: Assets, color: ray.Color) void {
+                const texture = switch (self.line_type) {
+                    .horizontal => assets.connection_h,
+                    .vertical => assets.connection_v,
+                    .up_right => assets.connection_ur,
+                    .up_left => assets.connection_ul,
+                    .down_right => assets.connection_dr,
+                    .down_left => assets.connection_dl,
+                };
+
+                const position: ray.Vector2 = .{
+                    .x = config.tile_size * @as(f32, @floatFromInt(self.position.x)),
+                    .y = config.tile_size * @as(f32, @floatFromInt(self.position.y)),
+                };
+
+                ray.DrawTextureV(texture, position, color);
+            }
+        };
+
         a: UVector2,
         b: UVector2,
+        lines: []const Line,
     };
 
     options: Options,
@@ -131,16 +164,28 @@ fn propagateAttemptedDirection(self: *TileMap) void {
             }) orelse continue;
             const effective_target = self.getEffectivePosition(target) orelse continue;
 
-            for (self.objects.items) |*target_object| {
-                if (target_object.attempted_direction != null) {
-                    continue;
-                }
-                const target_object_position = util.vec2Cast(IVector2, target_object.board_position) orelse continue;
-                if (target_object_position.x == effective_target.x and target_object_position.y == effective_target.y) {
-                    target_object.attempted_direction = object.attempted_direction;
+            const target_objects = &.{
+                self.getObjectAtPosition(target),
+                self.getObjectAtPosition(effective_target),
+            };
+
+            inline for (target_objects) |target_object| {
+                if (target_object != null and target_object.?.attempted_direction == null) {
+                    target_object.?.attempted_direction = object.attempted_direction;
                     updated = true;
                 }
             }
+
+            // for (self.objects.items) |*target_object| {
+            //     if (target_object.attempted_direction != null) {
+            //         continue;
+            //     }
+            //     const target_object_position = util.vec2Cast(IVector2, target_object.board_position) orelse continue;
+            //     if (target_object_position.x == effective_target.x and target_object_position.y == effective_target.y) {
+            //         target_object.attempted_direction = object.attempted_direction;
+            //         updated = true;
+            //     }
+            // }
         }
     }
 }
@@ -171,8 +216,16 @@ fn resolveMovement(self: *TileMap) void {
             }
 
             if (target.x != effective_target.x or target.y != effective_target.y) {
-                object.world_position.x += config.tile_size * (@as(f32, @floatFromInt(effective_target.x)) - @as(f32, @floatFromInt(target.x)));
-                object.world_position.y += config.tile_size * (@as(f32, @floatFromInt(effective_target.y)) - @as(f32, @floatFromInt(target.y)));
+                const offset_x = config.tile_size * (@as(f32, @floatFromInt(effective_target.x)) - @as(f32, @floatFromInt(target.x)));
+                const offset_y = config.tile_size * (@as(f32, @floatFromInt(effective_target.y)) - @as(f32, @floatFromInt(target.y)));
+                object.world_position.x += offset_x;
+                object.world_position.y += offset_y;
+
+                object.lerp_progress = 0;
+                object.offset = .{
+                    .x = -offset_x,
+                    .y = -offset_y,
+                };
             }
             object.board_position = util.vec2Cast(UVector2, effective_target) orelse unreachable;
             object.attempted_direction = null;
@@ -233,6 +286,10 @@ pub fn draw(self: TileMap, game: Game) void {
 
     self.prototype.draw(game);
     for (self.prototype.connections) |connection| {
+        for (connection.lines) |line| {
+            line.draw(game.assets, self.prototype.colors.foreground);
+        }
+
         const ends = .{ connection.a, connection.b };
         inline for (ends) |end| {
             const position: ray.Vector2 = .{

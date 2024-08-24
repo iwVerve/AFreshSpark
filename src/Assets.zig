@@ -30,6 +30,12 @@ const assets = .{
             .{ "player", "player.png" },
             .{ "block", "block.png" },
             .{ "connection_end", "connection_end.png" },
+            .{ "connection_h", "connection_h.png" },
+            .{ "connection_v", "connection_v.png" },
+            .{ "connection_ur", "connection_ur.png" },
+            .{ "connection_ul", "connection_ul.png" },
+            .{ "connection_dr", "connection_dr.png" },
+            .{ "connection_dl", "connection_dl.png" },
         },
     },
 };
@@ -37,7 +43,14 @@ const assets = .{
 wall: Texture2D,
 player: Texture2D,
 block: Texture2D,
+
 connection_end: Texture2D,
+connection_h: Texture2D,
+connection_v: Texture2D,
+connection_ur: Texture2D,
+connection_ul: Texture2D,
+connection_dr: Texture2D,
+connection_dl: Texture2D,
 
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {

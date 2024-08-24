@@ -50,6 +50,8 @@ pub const Prototype = struct {
 prototype: *const Prototype,
 board_position: UVector2,
 world_position: ray.Vector2,
+lerp_progress: f32 = 1,
+offset: ray.Vector2 = .{},
 texture: ray.Texture2D,
 has_control: bool,
 attempted_direction: ?Direction = null,
@@ -76,12 +78,19 @@ fn lerpWorldPosition(self: *Object) void {
     const target = getTargetWorldPosition(self.board_position);
     self.world_position.x = lerp(self.world_position.x, target.x, lerp_factor);
     self.world_position.y = lerp(self.world_position.y, target.y, lerp_factor);
+
+    self.lerp_progress = lerp(self.lerp_progress, 1, lerp_factor);
 }
 
 pub fn snap(self: *Object) void {
     self.world_position = getTargetWorldPosition(self.board_position);
+    self.lerp_progress = 1;
 }
 
 pub fn draw(self: Object, color: ray.Color) void {
-    ray.DrawTextureV(self.texture, self.world_position, color);
+    const draw_position = if (self.lerp_progress > 0.5)
+        self.world_position
+    else
+        ray.Vector2Add(self.world_position, self.offset);
+    ray.DrawTextureV(self.texture, draw_position, color);
 }

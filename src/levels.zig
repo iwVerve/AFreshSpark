@@ -16,17 +16,35 @@ pub const test1 = parse(.{
     \\#########
     \\#P......#
     \\#...X...#
-    \\#...X...#
     \\#.......#
+    \\#...X...#
     \\#.......#
     \\#########
     ,
     .colors = .{},
+    .connections = &.{
+        \\.........
+        \\...l-j...
+        \\...|.|...
+        \\..XJ.LX..
+        \\.........
+        \\.........
+        \\.........
+        ,
+        \\.........
+        \\.........
+        \\.........
+        \\.........
+        \\.........
+        \\...X-X...
+        \\.........
+    },
 });
 
 const LevelDefition = struct {
     tiles: []const u8,
     colors: TileMap.Prototype.Colors = .{},
+    connections: []const []const u8,
 };
 
 fn parse(comptime level: LevelDefition) TileMap.Prototype {
@@ -38,12 +56,6 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
     var tiles: []const []const Tile = &.{};
     var tile_row: []const Tile = &.{};
     var objects: []const Object.Prototype = &.{};
-
-    const connection: TileMap.Prototype.Connection = .{
-        .a = .{ .x = 2, .y = 3 },
-        .b = .{ .x = 6, .y = 3 },
-    };
-    const connections = &.{connection};
 
     for (level.tiles) |char| {
         if (char == '\n') {
@@ -82,6 +94,67 @@ fn parse(comptime level: LevelDefition) TileMap.Prototype {
     }
     tiles = tiles ++ .{tile_row};
     height += 1;
+
+    var connections: []const TileMap.Prototype.Connection = &.{};
+    for (level.connections) |connection_string| {
+        var connection_width: usize = 0;
+        var connection_height: usize = 0;
+        var first_end: ?UVector2 = null;
+        var second_end: ?UVector2 = null;
+        var lines: []const TileMap.Prototype.Connection.Line = &.{};
+
+        for (connection_string) |char| {
+            if (char == '\n') {
+                if (connection_width != width) {
+                    @compileError(std.fmt.comptimePrint("Connection string isn't the correct width:\n{s}\n", .{connection_string}));
+                }
+
+                connection_width = 0;
+                connection_height += 1;
+            } else if (char == 'X') {
+                const position: UVector2 = .{ .x = connection_width, .y = connection_height };
+                if (first_end == null) {
+                    first_end = position;
+                } else if (second_end == null) {
+                    second_end = position;
+                } else @compileError(std.fmt.comptimePrint("Too many connection ends in string:\n{s}\n", .{connection_string}));
+
+                connection_width += 1;
+            } else {
+                const position: UVector2 = .{ .x = connection_width, .y = connection_height };
+                blk: {
+                    const line_type: TileMap.Prototype.Connection.LineType = switch (char) {
+                        '-' => .horizontal,
+                        '|' => .vertical,
+                        'L' => .up_right,
+                        'J' => .up_left,
+                        'l' => .down_right,
+                        'j' => .down_left,
+                        '.' => break :blk,
+                        else => @compileError(std.fmt.comptimePrint("Invalid connection char {c} in string:\n{s}\n", .{ char, connection_string })),
+                    };
+                    const line: TileMap.Prototype.Connection.Line = .{
+                        .position = position,
+                        .line_type = line_type,
+                    };
+                    lines = lines ++ .{line};
+                }
+                connection_width += 1;
+            }
+        }
+        connection_height += 1;
+
+        if (second_end == null) {
+            @compileError(std.fmt.comptimePrint("Connection string doesn't contain two ends:\n{s}\n", .{connection_string}));
+        }
+
+        const connection: TileMap.Prototype.Connection = .{
+            .a = first_end.?,
+            .b = second_end.?,
+            .lines = lines,
+        };
+        connections = connections ++ .{connection};
+    }
 
     const options: TileMap.Options = .{
         .width = width,
