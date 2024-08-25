@@ -8,8 +8,8 @@ pub const exit = .{ .x = 6, .y = 2 };
 pub const exit_direction = .right;
 
 pub const tiles =
-    \\#######
-    \\##.P..#
+    \\###P###
+    \\##....#
     \\#..#...
     \\#..#X##
     \\#..#.##
