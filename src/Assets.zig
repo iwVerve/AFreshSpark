@@ -69,6 +69,7 @@ pub fn init(self: *Assets) !void {
 
             if (@TypeOf(field.*) == ray.Texture2D) {
                 ray.SetTextureFilter(field.*, ray.TEXTURE_FILTER_BILINEAR);
+                ray.SetTextureWrap(field.*, ray.TEXTURE_WRAP_CLAMP);
             }
 
             if (field.id <= 0) {
