@@ -1,6 +1,6 @@
 const ray = @import("raylib.zig");
 
-pub const game_name = "game";
+pub const game_name = "A Running Spark";
 
 // INSTALL CONFIG
 

@@ -40,7 +40,7 @@ const select_text = ">            <";
 const select_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 2 };
 const select_step = 40;
 const select_font_size = 24;
-const select_selected_text = ">    <";
+const select_selected_text = ">   <";
 
 const select_title_text = "Select level";
 const select_title_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 5 * 1 };
