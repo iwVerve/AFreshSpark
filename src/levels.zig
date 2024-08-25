@@ -17,6 +17,8 @@ const level_imports = .{
     @import("puzzles/warp_intro.zig"),
     @import("puzzles/simple_pushies.zig"),
     @import("puzzles/simple_pushies_2.zig"),
+    @import("puzzles/warp_block_intro.zig"),
+    @import("puzzles/warp_block_intro_2.zig"),
     @import("puzzles/warp_exit.zig"),
     @import("puzzles/tight.zig"),
     @import("puzzles/final.zig"),
