@@ -101,7 +101,7 @@ pub const simple_pushies = parse(.{
     \\########
     ,
     .colors = .{},
-    .exit = .{ .x = 0, .y = 0 },
+    .exit = .{ .x = 7, .y = 5 },
     .connections = &.{
         \\........
         \\........
@@ -146,7 +146,7 @@ pub const warp_exit = parse(.{
     \\########
     ,
     .colors = .{},
-    .exit = .{ .x = 0, .y = 0 },
+    .exit = .{ .x = 7, .y = 5 },
     .connections = &.{
         \\........
         \\........
