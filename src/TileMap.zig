@@ -315,6 +315,9 @@ fn resolveButtons(self: *TileMap) void {
 
 fn checkWin(self: TileMap) bool {
     for (self.objects.items) |object| {
+        if (!object.has_control) {
+            continue;
+        }
         if (util.vec2Eql(object.board_position, self.prototype.exit)) {
             return true;
         }
