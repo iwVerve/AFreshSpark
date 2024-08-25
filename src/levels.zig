@@ -19,6 +19,7 @@ const level_imports = .{
     @import("puzzles/simple_pushies_2.zig"),
     @import("puzzles/warp_exit.zig"),
     @import("puzzles/tight.zig"),
+    @import("puzzles/final.zig"),
 };
 
 pub const levels = blk: {

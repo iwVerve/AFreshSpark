@@ -48,7 +48,7 @@ const select_back_font_size = 36;
 const select_options = blk: {
     var out: []const struct { [:0]const u8, usize } = &.{};
 
-    for (0..levels.levels.len) |index| {
+    for (0..levels.levels.len - 1) |index| {
         var buffer: [3:0]u8 = undefined;
         const label = std.fmt.bufPrintZ(&buffer, "{:0>2}", .{index + 1}) catch @compileError("");
         const final: @TypeOf(buffer) = buffer;
