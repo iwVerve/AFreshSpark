@@ -54,3 +54,10 @@ pub const Direction = enum {
         };
     }
 };
+
+pub fn vec2Floor(vec: anytype) @TypeOf(vec) {
+    return .{
+        .x = @floor(vec.x),
+        .y = @floor(vec.y),
+    };
+}

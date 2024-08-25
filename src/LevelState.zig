@@ -101,11 +101,13 @@ pub fn deinit(self: *LevelState) void {
 }
 
 pub fn update(self: *LevelState) !void {
-    if (ray.IsKeyPressed(config.close_key)) {
-        const menu = MenuState.init(self.game);
-        self.game.state.deinit();
-        self.game.state = .{ .menu = menu };
-        return;
+    inline for (config.close_keys) |key| {
+        if (ray.IsKeyPressed(key)) {
+            const menu = MenuState.init(self.game);
+            self.game.state.deinit();
+            self.game.state = .{ .menu = menu };
+            return;
+        }
     }
 
     try self.tile_map.update(self);

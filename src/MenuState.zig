@@ -7,6 +7,7 @@ const Game = @import("Game.zig");
 const LevelState = @import("LevelState.zig");
 const levels = @import("levels.zig");
 const Assets = @import("Assets.zig");
+const util = @import("util.zig");
 
 const Vector2 = ray.Vector2;
 
@@ -30,6 +31,34 @@ const options_step = 36;
 const select_text = ">          <";
 
 // SELECT
+
+const select_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 2 };
+const select_step = 40;
+const select_font_size = 24;
+const select_selected_text = ">    <";
+
+const select_title_text = "Select level";
+const select_title_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 5 * 1 };
+const select_title_font_size = 36;
+
+const select_back_text = "Press Escape to return";
+const select_back_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 5 * 4 };
+const select_back_font_size = 36;
+
+const select_options = blk: {
+    var out: []const struct { [:0]const u8, usize } = &.{};
+
+    for (0..levels.levels.len) |index| {
+        var buffer: [3:0]u8 = undefined;
+        const label = std.fmt.bufPrintZ(&buffer, "{:0>2}", .{index + 1}) catch @compileError("");
+        const final: @TypeOf(buffer) = buffer;
+        const final_label = final[0 .. label.len + 1];
+        const entry = .{ final_label, index };
+        out = out ++ .{entry};
+    }
+
+    break :blk out;
+};
 
 // CONTROLS
 
@@ -104,7 +133,7 @@ const MenuOption = enum {
                 state.game.state.deinit();
                 state.game.state = .{ .level = level };
             },
-            .select => {},
+            .select => state.state = .select,
             .controls => state.state = .controls,
             .credits => state.state = .credits,
             .exit => state.game.running = false,
@@ -140,6 +169,7 @@ state: MenuSubstate = .main,
 title_pos: Vector2 = undefined,
 select_offset: Vector2 = undefined,
 selected_option: usize = 0,
+selected_level: usize = 0,
 
 pub fn init(game: *Game) MenuState {
     const font = @field(game.assets, font_name);
@@ -165,9 +195,11 @@ pub fn update(self: *MenuState) !void {
     switch (self.state) {
         .main => {
             if (!builtin.target.isWasm()) {
-                if (ray.IsKeyPressed(config.close_key)) {
-                    self.game.running = false;
-                    return;
+                inline for (config.close_keys) |key| {
+                    if (ray.IsKeyPressed(key)) {
+                        self.game.running = false;
+                        return;
+                    }
                 }
             }
 
@@ -186,13 +218,7 @@ pub fn update(self: *MenuState) !void {
                 }
             }
             if (v_input != 0) {
-                var result = @as(isize, @intCast(self.selected_option)) + v_input;
-                while (result < 0) {
-                    result += options.len;
-                }
-                while (result >= options.len) {
-                    result -= options.len;
-                }
+                const result = @mod(@as(isize, @intCast(self.selected_option)) + v_input, options.len);
                 self.selected_option = @intCast(result);
             }
 
@@ -204,9 +230,44 @@ pub fn update(self: *MenuState) !void {
                 }
             }
         },
-        .select => {},
+        .select => {
+            inline for (config.close_keys) |key| {
+                if (ray.IsKeyPressed(key)) {
+                    self.state = .main;
+                    return;
+                }
+            }
+
+            var h_input: isize = 0;
+            const h_dirs = .{
+                .{ config.right_keys, 1 },
+                .{ config.left_keys, -1 },
+            };
+            inline for (h_dirs) |h_dir| {
+                const keys = h_dir[0];
+                const dir = h_dir[1];
+                inline for (keys) |key| {
+                    if (ray.IsKeyPressed(key)) {
+                        h_input += dir;
+                    }
+                }
+            }
+            if (h_input != 0) {
+                const result = @mod(@as(isize, @intCast(self.selected_level)) + h_input, select_options.len);
+                self.selected_level = @intCast(result);
+            }
+
+            inline for (config.confirm_keys) |key| {
+                if (ray.IsKeyPressed(key)) {
+                    const level = try LevelState.init(self.game, self.selected_level);
+                    self.deinit();
+                    self.game.state = .{ .level = level };
+                    return;
+                }
+            }
+        },
         .controls, .credits => {
-            const all_keys = .{ config.confirm_keys, .{config.close_key} };
+            const all_keys = .{ config.confirm_keys, config.close_keys };
             inline for (all_keys) |keys| {
                 inline for (keys) |key| {
                     if (ray.IsKeyPressed(key)) {
@@ -249,7 +310,42 @@ pub fn draw(self: MenuState, assets: Assets) void {
                 }
             }
         },
-        .select => {},
+        .select => {
+            const title_pos = ray.Vector2Subtract(
+                select_title_center,
+                ray.Vector2Scale(ray.MeasureTextEx(font, select_title_text, select_title_font_size, 1), 0.5),
+            );
+            ray.DrawTextEx(font, select_title_text, util.vec2Floor(title_pos), select_title_font_size, 1, text_color);
+
+            const back_pos = ray.Vector2Subtract(
+                select_back_center,
+                ray.Vector2Scale(ray.MeasureTextEx(font, select_back_text, select_back_font_size, 1), 0.5),
+            );
+            ray.DrawTextEx(font, select_back_text, util.vec2Floor(back_pos), select_back_font_size, 1, text_color);
+
+            var select_x = select_center.x - (select_options.len - 1) * select_step / 2;
+            for (select_options, 0..) |select_option, index| {
+                const label = select_option[0];
+
+                const position = ray.Vector2Subtract(
+                    .{ .x = select_x, .y = select_center.y },
+                    ray.Vector2Scale(ray.MeasureTextEx(font, label, select_font_size, 1), 0.5),
+                );
+                ray.DrawTextEx(font, label, util.vec2Floor(position), select_font_size, 1, text_color);
+
+                if (self.selected_level == index) {
+                    const measure = ray.MeasureTextEx(font, select_selected_text, select_font_size, 1);
+                    const select_position: Vector2 = .{
+                        .x = @floor(select_x),
+                        .y = @floor(select_center.y),
+                    };
+                    const origin = ray.Vector2Scale(measure, 0.5);
+                    ray.DrawTextPro(font, select_selected_text, select_position, origin, 90, select_font_size, 1, text_color);
+                }
+
+                select_x += select_step;
+            }
+        },
         .controls => {
             var line_y = controls_center.y - (controls_lines.len - 1) * controls_step / 2;
             inline for (controls_lines) |line| {
