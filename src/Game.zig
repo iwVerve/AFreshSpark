@@ -49,6 +49,7 @@ assets: Assets = undefined,
 running: bool = true,
 state: State = undefined,
 completed_levels: [levels.levels.len]bool = [_]bool{false} ** levels.levels.len,
+volume: usize = 10,
 
 pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {
@@ -59,6 +60,8 @@ pub fn init(self: *Game, init_window: bool) !void {
 
     ray.InitAudioDevice();
     try self.assets.init();
+
+    ray.SetSoundVolume(self.assets.warp, 0.7);
 
     const menu = MenuState.init(self);
     self.state = .{ .menu = menu };

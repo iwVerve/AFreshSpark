@@ -33,7 +33,7 @@ const options_font_size = 36;
 const options_center: Vector2 = .{ .x = config.resolution.width / 2, .y = config.resolution.height / 24 * 13 };
 const options_step = 36;
 
-const select_text = ">          <";
+const select_text = ">            <";
 
 // SELECT
 
@@ -129,6 +129,7 @@ const MenuOption = enum {
     start,
     select,
     controls,
+    volume,
     credits,
     exit,
 
@@ -141,16 +142,32 @@ const MenuOption = enum {
             },
             .select => state.state = .select,
             .controls => state.state = .controls,
+            .volume => changeVolume(1, state.game),
             .credits => state.state = .credits,
             .exit => state.game.running = false,
         }
     }
 
-    pub fn getName(self: MenuOption) [*c]const u8 {
+    pub fn getName(self: MenuOption, game: Game) [*c]const u8 {
         return switch (self) {
             .start => "Start",
             .select => "Select",
             .controls => "Controls",
+            .volume => blk: {
+                inline for (0..11) |volume| {
+                    if (game.volume == volume) {
+                        const name = comptime blk2: {
+                            var buffer: [32:0]u8 = undefined;
+                            const str = std.fmt.bufPrintZ(&buffer, "Volume: {:0>2}", .{volume}) catch @compileError("");
+                            const final_buffer: @TypeOf(buffer) = buffer;
+                            const final_str = final_buffer[0 .. str.len + 1];
+                            break :blk2 final_str;
+                        };
+                        break :blk name;
+                    }
+                }
+                unreachable;
+            },
             .credits => "Credits",
             .exit => "Exit",
         };
@@ -161,6 +178,7 @@ const options = blk: {
     var out: []const MenuOption = &.{
         .start,
         .select,
+        .volume,
         .controls,
         .credits,
     };
@@ -229,10 +247,31 @@ pub fn update(self: *MenuState) !void {
                 self.selected_option = @intCast(result);
             }
 
+            const option = options[self.selected_option];
+            if (option == .volume) {
+                var h_input: isize = 0;
+                const h_dirs = .{
+                    .{ config.right_keys, 1 },
+                    .{ config.left_keys, -1 },
+                };
+                inline for (h_dirs) |h_dir| {
+                    const keys = h_dir[0];
+                    const dir = h_dir[1];
+                    inline for (keys) |key| {
+                        if (ray.IsKeyPressed(key)) {
+                            h_input += dir;
+                        }
+                    }
+                }
+                if (h_input != 0) {
+                    changeVolume(h_input, self.game);
+                    ray.PlaySound(@field(self.game.assets, select_sound));
+                }
+            }
+
             inline for (config.confirm_keys) |key| {
                 if (ray.IsKeyPressed(key)) {
                     ray.PlaySound(@field(self.game.assets, select_sound));
-                    const option = options[self.selected_option];
                     try option.select(self);
                     return;
                 }
@@ -292,6 +331,12 @@ pub fn update(self: *MenuState) !void {
     }
 }
 
+fn changeVolume(change: isize, game: *Game) void {
+    const new_volume: usize = @intCast(@mod(@as(isize, @intCast(game.volume)) + change, 11));
+    ray.SetMasterVolume(@as(f32, @floatFromInt(new_volume)) / 10);
+    game.volume = new_volume;
+}
+
 pub fn draw(self: MenuState, assets: Assets) void {
     ray.ClearBackground(background_color);
 
@@ -303,7 +348,7 @@ pub fn draw(self: MenuState, assets: Assets) void {
 
             var option_y = options_center.y - (options.len - 1) * options_step / 2;
             inline for (options, 0..) |option, index| {
-                const option_text = option.getName();
+                const option_text = option.getName(self.game.*);
                 const measure = ray.MeasureTextEx(font, option_text, options_font_size, 1);
 
                 option_y += options_step;
