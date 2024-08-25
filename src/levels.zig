@@ -14,6 +14,7 @@ const UVector2 = util.UVector2;
 
 pub const warp_intro = parse(@import("puzzles/warp_intro.zig"));
 pub const simple_pushies = parse(@import("puzzles/simple_pushies.zig"));
+pub const simple_pushies_2 = parse(@import("puzzles/simple_pushies_2.zig"));
 pub const warp_exit = parse(@import("puzzles/warp_exit.zig"));
 
 // Unused, parse expects type with these consts.
