@@ -32,3 +32,5 @@ pub const right_keys = .{ ray.KEY_RIGHT, ray.KEY_D };
 pub const down_keys = .{ ray.KEY_DOWN, ray.KEY_S };
 pub const left_keys = .{ ray.KEY_LEFT, ray.KEY_A };
 pub const restart_key = ray.KEY_R;
+pub const confirm_keys = .{ ray.KEY_ENTER, ray.KEY_Z };
+pub const close_key = ray.KEY_ESCAPE;

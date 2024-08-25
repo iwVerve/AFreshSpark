@@ -48,7 +48,7 @@ pub fn main() !void {
         ray.emscripten_set_main_loop(&emscriptenUpdate, 0, 1);
     } else {
         // Native game loop
-        while (!ray.WindowShouldClose()) {
+        while (!ray.WindowShouldClose() and game.running) {
             if (build_options.static) {
                 try game.update();
             } else {

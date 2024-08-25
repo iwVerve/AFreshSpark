@@ -1,6 +1,8 @@
 const ray = @import("raylib.zig");
-const Texture2D = ray.Texture2D;
 const config = @import("config.zig");
+
+const Texture2D = ray.Texture2D;
+const Font = ray.Font;
 
 const Assets = @This();
 
@@ -41,6 +43,14 @@ const assets = .{
             .{ "connection_dl", "connection_dl.png" },
         },
     },
+    AssetData(Font){
+        .load_fn = ray.LoadFont,
+        .unload_fn = ray.UnloadFont,
+        .directory = "fonts/",
+        .assets = &.{
+            .{ "m5x7", "m5x7.fnt" },
+        },
+    },
 };
 
 wall: Texture2D,
@@ -58,6 +68,8 @@ connection_ul: Texture2D,
 connection_dr: Texture2D,
 connection_dl: Texture2D,
 
+m5x7: Font,
+
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {
         inline for (asset_data.assets) |asset| {
@@ -67,13 +79,18 @@ pub fn init(self: *Assets) !void {
 
             field.* = asset_data.load_fn(path);
 
-            if (@TypeOf(field.*) == ray.Texture2D) {
+            if (@TypeOf(field.*) == Texture2D) {
                 ray.SetTextureFilter(field.*, ray.TEXTURE_FILTER_BILINEAR);
                 ray.SetTextureWrap(field.*, ray.TEXTURE_WRAP_CLAMP);
-            }
 
-            if (field.id <= 0) {
-                return error.AssetLoadError;
+                if (field.id <= 0) {
+                    return error.AssetLoadError;
+                }
+            }
+            if (@TypeOf(field.*) == Font) {
+                if (field.*.texture.id <= 0) {
+                    return error.AssetLoadError;
+                }
             }
         }
     }

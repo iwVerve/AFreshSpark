@@ -381,10 +381,6 @@ pub fn draw(self: TileMap, game: Game) void {
     ray.BeginMode2D(self.prototype.camera);
     defer ray.EndMode2D();
 
-    for (self.prototype.outside_rectangles) |rectangle| {
-        ray.DrawRectangleRec(rectangle, self.prototype.colors.foreground);
-    }
-
     self.prototype.draw(game);
     for (self.prototype.connections) |connection| {
         for (connection.lines) |line| {
@@ -414,6 +410,10 @@ pub fn draw(self: TileMap, game: Game) void {
 
     self.drawObjectLayer(.default, self.prototype.colors.foreground);
     self.drawObjectLayer(.player, self.prototype.colors.foreground);
+
+    for (self.prototype.outside_rectangles) |rectangle| {
+        ray.DrawRectangleRec(rectangle, self.prototype.colors.foreground);
+    }
 }
 
 fn drawObjectLayer(self: TileMap, layer: Object.DrawLayer, color: ray.Color) void {

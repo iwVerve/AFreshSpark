@@ -5,6 +5,7 @@ const config = @import("config.zig");
 const ray = @import("raylib.zig");
 const Assets = @import("Assets.zig");
 const LevelState = @import("LevelState.zig");
+const MenuState = @import("MenuState.zig");
 const levels = @import("levels.zig");
 
 const Game = @This();
@@ -19,16 +20,33 @@ const background_color: ray.Color = .{ .r = 60, .g = 100, .b = 240, .a = 255 };
 
 const State = union(enum) {
     level: LevelState,
+    menu: MenuState,
+
+    pub fn update(self: *State, game: *Game) !void {
+        switch (self.*) {
+            .menu => |*m| try m.update(game),
+            .level => |*l| try l.update(game),
+        }
+    }
 
     pub fn deinit(self: *State) void {
         switch (self.*) {
+            .menu => |*m| m.deinit(),
             .level => |*l| l.deinit(),
+        }
+    }
+
+    pub fn draw(self: State, game: Game) void {
+        switch (self) {
+            .menu => |m| m.draw(game.assets),
+            .level => |l| l.draw(game),
         }
     }
 };
 
 allocator: Allocator,
 assets: Assets = undefined,
+running: bool = true,
 state: State = undefined,
 
 pub fn init(self: *Game, init_window: bool) !void {
@@ -40,8 +58,8 @@ pub fn init(self: *Game, init_window: bool) !void {
 
     try self.assets.init();
 
-    const level = try LevelState.init(self.allocator, &levels.tight, &self.assets);
-    self.state = .{ .level = level };
+    const menu = MenuState.init(self.assets);
+    self.state = .{ .menu = menu };
 }
 
 // Exported functions can't return zig errors, wrap regular init function.
@@ -61,10 +79,7 @@ pub fn deinit(self: *Game, deinit_window: bool) void {
 }
 
 pub fn update(self: *Game) !void {
-    switch (self.state) {
-        .level => |*l| try l.update(),
-    }
-
+    try self.state.update(self);
     try self.draw();
 }
 
@@ -78,7 +93,5 @@ fn draw(self: Game) !void {
     ray.BeginDrawing();
     defer ray.EndDrawing();
 
-    switch (self.state) {
-        .level => |l| l.draw(self),
-    }
+    self.state.draw(self);
 }

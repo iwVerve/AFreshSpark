@@ -6,6 +6,8 @@ const ray = @import("raylib.zig");
 const TileMap = @import("TileMap.zig");
 const Game = @import("Game.zig");
 const Assets = @import("Assets.zig");
+const config = @import("config.zig");
+const MenuState = @import("MenuState.zig");
 
 const LevelState = @This();
 
@@ -22,7 +24,14 @@ pub fn deinit(self: *LevelState) void {
     self.tile_map.deinit();
 }
 
-pub fn update(self: *LevelState) !void {
+pub fn update(self: *LevelState, game: *Game) !void {
+    if (ray.IsKeyPressed(config.close_key)) {
+        const menu = MenuState.init(game.assets);
+        game.state.deinit();
+        game.state = .{ .menu = menu };
+        return;
+    }
+
     try self.tile_map.update();
 }
 
