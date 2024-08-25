@@ -40,7 +40,7 @@ pub fn init(self: *Game, init_window: bool) !void {
 
     try self.assets.init();
 
-    const level = try LevelState.init(self.allocator, &levels.sandbox, &self.assets);
+    const level = try LevelState.init(self.allocator, &levels.warp_exit, &self.assets);
     self.state = .{ .level = level };
 }
 
