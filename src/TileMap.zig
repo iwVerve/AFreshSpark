@@ -183,6 +183,7 @@ fn takeTurn(self: *TileMap, direction: Direction, state: *LevelState) !void {
     self.resolveButtons();
 
     if (self.checkWin()) {
+        state.game.completed_levels[state.current_level] = true;
         if (state.current_level < levels.levels.len - 1) {
             self.control = false;
             state.transition.start(self.prototype.exit_direction);

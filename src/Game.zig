@@ -48,6 +48,7 @@ allocator: Allocator,
 assets: Assets = undefined,
 running: bool = true,
 state: State = undefined,
+completed_levels: [levels.levels.len]bool = [_]bool{false} ** levels.levels.len,
 
 pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {

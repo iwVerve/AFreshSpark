@@ -17,6 +17,7 @@ const background_color = .{ .r = 41, .g = 46, .b = 51, .a = 255 };
 const font_name = "m5x7";
 
 const text_color = ray.WHITE;
+const text_color_dark = ray.GRAY;
 
 // MAIN
 
@@ -331,7 +332,9 @@ pub fn draw(self: MenuState, assets: Assets) void {
                     .{ .x = select_x, .y = select_center.y },
                     ray.Vector2Scale(ray.MeasureTextEx(font, label, select_font_size, 1), 0.5),
                 );
-                ray.DrawTextEx(font, label, util.vec2Floor(position), select_font_size, 1, text_color);
+                const color = if (self.game.completed_levels[index]) text_color_dark else text_color;
+
+                ray.DrawTextEx(font, label, util.vec2Floor(position), select_font_size, 1, color);
 
                 if (self.selected_level == index) {
                     const measure = ray.MeasureTextEx(font, select_selected_text, select_font_size, 1);
