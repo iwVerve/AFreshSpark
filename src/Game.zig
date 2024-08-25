@@ -57,6 +57,7 @@ pub fn init(self: *Game, init_window: bool) !void {
         ray.SetExitKey(0);
     }
 
+    ray.InitAudioDevice();
     try self.assets.init();
 
     const menu = MenuState.init(self);
@@ -73,6 +74,7 @@ pub fn deinit(self: *Game, deinit_window: bool) void {
     self.state.deinit();
 
     self.assets.deinit();
+    ray.CloseAudioDevice();
 
     if (deinit_window) {
         ray.CloseWindow();

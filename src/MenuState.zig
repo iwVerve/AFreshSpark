@@ -19,6 +19,10 @@ const font_name = "m5x7";
 const text_color = ray.WHITE;
 const text_color_dark = ray.GRAY;
 
+const move_sound = "step";
+const select_sound = "warp";
+const back_sound = "push";
+
 // MAIN
 
 const title = config.game_name;
@@ -99,8 +103,9 @@ const credits_text =
     \\Made using zig and raylib
     \\
     \\m5x7 font by Daniel Linssen
+    \\Sound effects made using ChipTone
     \\
-    \\Press confirm to continue
+    \\Press confirm to return
 ;
 
 const credits_lines = blk: {
@@ -219,12 +224,14 @@ pub fn update(self: *MenuState) !void {
                 }
             }
             if (v_input != 0) {
+                ray.PlaySound(@field(self.game.assets, move_sound));
                 const result = @mod(@as(isize, @intCast(self.selected_option)) + v_input, options.len);
                 self.selected_option = @intCast(result);
             }
 
             inline for (config.confirm_keys) |key| {
                 if (ray.IsKeyPressed(key)) {
+                    ray.PlaySound(@field(self.game.assets, select_sound));
                     const option = options[self.selected_option];
                     try option.select(self);
                     return;
@@ -234,6 +241,7 @@ pub fn update(self: *MenuState) !void {
         .select => {
             inline for (config.close_keys) |key| {
                 if (ray.IsKeyPressed(key)) {
+                    ray.PlaySound(@field(self.game.assets, back_sound));
                     self.state = .main;
                     return;
                 }
@@ -254,12 +262,14 @@ pub fn update(self: *MenuState) !void {
                 }
             }
             if (h_input != 0) {
+                ray.PlaySound(@field(self.game.assets, move_sound));
                 const result = @mod(@as(isize, @intCast(self.selected_level)) + h_input, select_options.len);
                 self.selected_level = @intCast(result);
             }
 
             inline for (config.confirm_keys) |key| {
                 if (ray.IsKeyPressed(key)) {
+                    ray.PlaySound(@field(self.game.assets, select_sound));
                     const level = try LevelState.init(self.game, self.selected_level);
                     self.deinit();
                     self.game.state = .{ .level = level };
@@ -272,6 +282,7 @@ pub fn update(self: *MenuState) !void {
             inline for (all_keys) |keys| {
                 inline for (keys) |key| {
                     if (ray.IsKeyPressed(key)) {
+                        ray.PlaySound(@field(self.game.assets, back_sound));
                         self.state = .main;
                         return;
                     }

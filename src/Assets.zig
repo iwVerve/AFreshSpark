@@ -3,6 +3,7 @@ const config = @import("config.zig");
 
 const Texture2D = ray.Texture2D;
 const Font = ray.Font;
+const Sound = ray.Sound;
 
 const Assets = @This();
 
@@ -51,6 +52,17 @@ const assets = .{
             .{ "m5x7", "m5x7.fnt" },
         },
     },
+    AssetData(Sound){
+        .load_fn = ray.LoadSound,
+        .unload_fn = ray.UnloadSound,
+        .directory = "sounds/",
+        .assets = &.{
+            .{ "step", "step.wav" },
+            .{ "push", "push.wav" },
+            .{ "warp", "warp.wav" },
+            .{ "win", "win.wav" },
+        },
+    },
 };
 
 wall: Texture2D,
@@ -69,6 +81,11 @@ connection_dr: Texture2D,
 connection_dl: Texture2D,
 
 m5x7: Font,
+
+step: Sound,
+push: Sound,
+warp: Sound,
+win: Sound,
 
 pub fn init(self: *Assets) !void {
     inline for (assets) |asset_data| {

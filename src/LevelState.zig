@@ -19,7 +19,7 @@ const Transition = struct {
 
     state: enum { wait, fade_in, fade_out } = .wait,
     time: usize = 0,
-    direction: Direction,
+    direction: Direction = .right,
 
     pub fn start(self: *Transition, direction: Direction) void {
         self.time = 0;
@@ -84,7 +84,7 @@ const Transition = struct {
 game: *Game,
 tile_map: TileMap,
 current_level: usize,
-transition: Transition = undefined,
+transition: Transition = .{},
 
 pub fn init(game: *Game, level_index: usize) !LevelState {
     const prototype = &levels.levels[level_index];
@@ -103,6 +103,7 @@ pub fn deinit(self: *LevelState) void {
 pub fn update(self: *LevelState) !void {
     inline for (config.close_keys) |key| {
         if (ray.IsKeyPressed(key)) {
+            ray.PlaySound(self.game.assets.push);
             const menu = MenuState.init(self.game);
             self.game.state.deinit();
             self.game.state = .{ .menu = menu };

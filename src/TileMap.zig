@@ -101,6 +101,11 @@ objects: ArrayList(Object),
 buttons: ArrayList(Button),
 control: bool = true,
 
+player_moved: bool = undefined,
+block_moved: bool = undefined,
+something_warped: bool = undefined,
+won: bool = undefined,
+
 pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) !TileMap {
     var objects = ArrayList(Object).init(allocator);
     errdefer objects.deinit();
@@ -150,6 +155,7 @@ pub fn deinit(self: *TileMap) void {
 pub fn update(self: *TileMap, state: *LevelState) !void {
     if (self.control) {
         if (ray.IsKeyPressed(config.restart_key)) {
+            ray.PlaySound(self.assets.push);
             self.deinit();
             self.* = try TileMap.init(self.prototype, self.assets, self.allocator);
         }
@@ -176,6 +182,7 @@ pub fn update(self: *TileMap, state: *LevelState) !void {
 }
 
 fn takeTurn(self: *TileMap, direction: Direction, state: *LevelState) !void {
+    self.resetSound();
     self.snapObjects();
     self.setControlledObjects(direction);
     self.propagateAttemptedDirection();
@@ -184,11 +191,14 @@ fn takeTurn(self: *TileMap, direction: Direction, state: *LevelState) !void {
 
     if (self.checkWin()) {
         state.game.completed_levels[state.current_level] = true;
+        self.won = true;
         if (state.current_level < levels.levels.len - 1) {
             self.control = false;
             state.transition.start(self.prototype.exit_direction);
         }
     }
+
+    self.playSound();
 }
 
 fn snapObjects(self: *TileMap) void {
@@ -290,11 +300,18 @@ fn resolveMovement(self: *TileMap) void {
                     .x = -offset_x,
                     .y = -offset_y,
                 };
+                self.something_warped = true;
             }
             object.board_position = util.vec2Cast(UVector2, move_to) orelse unreachable;
             object.attempted_direction = null;
             updated = true;
             strict = true;
+
+            if (object.has_control) {
+                self.player_moved = true;
+            } else {
+                self.block_moved = true;
+            }
         }
         if (!updated and strict) {
             updated = true;
@@ -333,6 +350,28 @@ fn checkWin(self: TileMap) bool {
         }
     }
     return false;
+}
+
+fn resetSound(self: *TileMap) void {
+    self.player_moved = false;
+    self.block_moved = false;
+    self.something_warped = false;
+    self.won = false;
+}
+
+fn playSound(self: TileMap) void {
+    const assets = self.assets;
+    if (self.won) {
+        ray.PlaySound(assets.win);
+        return;
+    }
+    if (self.something_warped) {
+        ray.PlaySound(assets.warp);
+    } else if (self.block_moved) {
+        ray.PlaySound(assets.push);
+    } else if (self.player_moved) {
+        ray.PlaySound(assets.step);
+    }
 }
 
 fn getEffectivePosition(self: TileMap, position: anytype, direction: util.Direction) ?UVector2 {
