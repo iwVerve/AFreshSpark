@@ -11,18 +11,33 @@ const util = @import("util.zig");
 const Button = @import("Button.zig");
 
 const UVector2 = util.UVector2;
+const Direction = util.Direction;
 
-pub const warp_intro = parse(@import("puzzles/warp_intro.zig"));
-pub const simple_pushies = parse(@import("puzzles/simple_pushies.zig"));
-pub const simple_pushies_2 = parse(@import("puzzles/simple_pushies_2.zig"));
-pub const warp_exit = parse(@import("puzzles/warp_exit.zig"));
-pub const tight = parse(@import("puzzles/tight.zig"));
+const level_imports = .{
+    @import("puzzles/warp_intro.zig"),
+    @import("puzzles/simple_pushies.zig"),
+    @import("puzzles/simple_pushies_2.zig"),
+    @import("puzzles/warp_exit.zig"),
+    @import("puzzles/tight.zig"),
+};
+
+pub const levels = blk: {
+    var out: []const TileMap.Prototype = &.{};
+
+    for (level_imports) |level_import| {
+        const level = parse(level_import);
+        out = out ++ .{level};
+    }
+
+    break :blk out;
+};
 
 // Unused, parse expects type with these consts.
 const LevelDefition = struct {
     tiles: []const u8,
     colors: TileMap.Prototype.Colors = .{},
     exit: UVector2,
+    exit_direction: Direction,
     connections: []const []const u8,
     buttons: []const []const u8,
 };
@@ -255,6 +270,7 @@ fn parse(comptime level: anytype) TileMap.Prototype {
     return .{
         .options = options,
         .exit = level.exit,
+        .exit_direction = level.exit_direction,
         .tiles = tiles,
         .camera = camera,
         .objects = objects,

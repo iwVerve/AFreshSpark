@@ -8,6 +8,8 @@ const Object = @import("Object.zig");
 const Assets = @import("Assets.zig");
 const util = @import("util.zig");
 const Button = @import("Button.zig");
+const LevelState = @import("LevelState.zig");
+const levels = @import("levels.zig");
 
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
@@ -70,6 +72,7 @@ pub const Prototype = struct {
     colors: Colors = .{},
 
     exit: UVector2,
+    exit_direction: Direction,
     tiles: []const []const Tile,
     objects: []const Object.Prototype,
     connections: []const Connection,
@@ -96,6 +99,7 @@ allocator: Allocator,
 assets: *Assets,
 objects: ArrayList(Object),
 buttons: ArrayList(Button),
+control: bool = true,
 
 pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) !TileMap {
     var objects = ArrayList(Object).init(allocator);
@@ -143,23 +147,25 @@ pub fn deinit(self: *TileMap) void {
     self.buttons.deinit();
 }
 
-pub fn update(self: *TileMap) !void {
-    if (ray.IsKeyPressed(config.restart_key)) {
-        self.deinit();
-        self.* = try TileMap.init(self.prototype, self.assets, self.allocator);
-    }
+pub fn update(self: *TileMap, state: *LevelState) !void {
+    if (self.control) {
+        if (ray.IsKeyPressed(config.restart_key)) {
+            self.deinit();
+            self.* = try TileMap.init(self.prototype, self.assets, self.allocator);
+        }
 
-    const input_directions = .{
-        .{ config.up_keys, Direction.up },
-        .{ config.right_keys, Direction.right },
-        .{ config.down_keys, Direction.down },
-        .{ config.left_keys, Direction.left },
-    };
+        const input_directions = .{
+            .{ config.up_keys, Direction.up },
+            .{ config.right_keys, Direction.right },
+            .{ config.down_keys, Direction.down },
+            .{ config.left_keys, Direction.left },
+        };
 
-    inline for (input_directions) |input_direction| {
-        inline for (input_direction[0]) |key| {
-            if (ray.IsKeyPressed(key)) {
-                self.takeTurn(input_direction[1]);
+        inline for (input_directions) |input_direction| {
+            inline for (input_direction[0]) |key| {
+                if (ray.IsKeyPressed(key)) {
+                    try self.takeTurn(input_direction[1], state);
+                }
             }
         }
     }
@@ -169,7 +175,7 @@ pub fn update(self: *TileMap) !void {
     }
 }
 
-fn takeTurn(self: *TileMap, direction: Direction) void {
+fn takeTurn(self: *TileMap, direction: Direction, state: *LevelState) !void {
     self.snapObjects();
     self.setControlledObjects(direction);
     self.propagateAttemptedDirection();
@@ -177,7 +183,10 @@ fn takeTurn(self: *TileMap, direction: Direction) void {
     self.resolveButtons();
 
     if (self.checkWin()) {
-        std.debug.print("Win!\n", .{});
+        if (state.current_level < levels.levels.len - 1) {
+            self.control = false;
+            state.transition.start(self.prototype.exit_direction);
+        }
     }
 }
 
@@ -382,11 +391,20 @@ pub fn draw(self: TileMap, game: Game) void {
     defer ray.EndMode2D();
 
     self.prototype.draw(game);
-    for (self.prototype.connections) |connection| {
-        for (connection.lines) |line| {
-            line.draw(game.assets, self.prototype.colors.foreground);
-        }
 
+    const things_with_lines = .{
+        self.prototype.connections,
+        self.prototype.buttons,
+    };
+    inline for (things_with_lines) |group| {
+        for (group) |thing| {
+            for (thing.lines) |line| {
+                line.draw(game.assets, self.prototype.colors.foreground);
+            }
+        }
+    }
+
+    for (self.prototype.connections) |connection| {
         const ends = .{ connection.a, connection.b };
         inline for (ends) |end| {
             const position: ray.Vector2 = .{
@@ -397,10 +415,6 @@ pub fn draw(self: TileMap, game: Game) void {
         }
     }
     for (self.prototype.buttons) |button| {
-        for (button.lines) |line| {
-            line.draw(game.assets, self.prototype.colors.foreground);
-        }
-
         const position: ray.Vector2 = .{
             .x = config.tile_size * @as(f32, @floatFromInt(button.button.x)),
             .y = config.tile_size * @as(f32, @floatFromInt(button.button.y)),

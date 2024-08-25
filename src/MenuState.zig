@@ -97,17 +97,17 @@ const MenuOption = enum {
     credits,
     exit,
 
-    pub fn select(self: MenuOption, state: *MenuState, game: *Game) !void {
+    pub fn select(self: MenuOption, state: *MenuState) !void {
         switch (self) {
             .start => {
-                const level = try LevelState.init(game.allocator, &levels.warp_exit, &game.assets);
-                game.state.deinit();
-                game.state = .{ .level = level };
+                const level = try LevelState.init(state.game, 0);
+                state.game.state.deinit();
+                state.game.state = .{ .level = level };
             },
             .select => {},
             .controls => state.state = .controls,
             .credits => state.state = .credits,
-            .exit => game.running = false,
+            .exit => state.game.running = false,
         }
     }
 
@@ -135,13 +135,14 @@ const options = blk: {
     break :blk out;
 };
 
+game: *Game,
 state: MenuSubstate = .main,
 title_pos: Vector2 = undefined,
 select_offset: Vector2 = undefined,
 selected_option: usize = 0,
 
-pub fn init(assets: Assets) MenuState {
-    const font = @field(assets, font_name);
+pub fn init(game: *Game) MenuState {
+    const font = @field(game.assets, font_name);
 
     const measure = ray.MeasureTextEx(font, title, title_font_size, 1);
     const title_pos_f = ray.Vector2Subtract(title_center, ray.Vector2Scale(measure, 0.5));
@@ -150,6 +151,7 @@ pub fn init(assets: Assets) MenuState {
     const select_offset = ray.Vector2Scale(ray.Vector2Negate(ray.MeasureTextEx(font, select_text, options_font_size, 1)), 0.5);
 
     return .{
+        .game = game,
         .title_pos = title_pos,
         .select_offset = select_offset,
     };
@@ -159,12 +161,12 @@ pub fn deinit(self: *MenuState) void {
     _ = self;
 }
 
-pub fn update(self: *MenuState, game: *Game) !void {
+pub fn update(self: *MenuState) !void {
     switch (self.state) {
         .main => {
             if (!builtin.target.isWasm()) {
                 if (ray.IsKeyPressed(config.close_key)) {
-                    game.running = false;
+                    self.game.running = false;
                     return;
                 }
             }
@@ -197,7 +199,7 @@ pub fn update(self: *MenuState, game: *Game) !void {
             inline for (config.confirm_keys) |key| {
                 if (ray.IsKeyPressed(key)) {
                     const option = options[self.selected_option];
-                    try option.select(self, game);
+                    try option.select(self);
                     return;
                 }
             }

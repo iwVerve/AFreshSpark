@@ -22,10 +22,10 @@ const State = union(enum) {
     level: LevelState,
     menu: MenuState,
 
-    pub fn update(self: *State, game: *Game) !void {
+    pub fn update(self: *State) !void {
         switch (self.*) {
-            .menu => |*m| try m.update(game),
-            .level => |*l| try l.update(game),
+            .menu => |*m| try m.update(),
+            .level => |*l| try l.update(),
         }
     }
 
@@ -36,10 +36,10 @@ const State = union(enum) {
         }
     }
 
-    pub fn draw(self: State, game: Game) void {
+    pub fn draw(self: State) void {
         switch (self) {
-            .menu => |m| m.draw(game.assets),
-            .level => |l| l.draw(game),
+            .menu => |m| m.draw(m.game.assets),
+            .level => |l| l.draw(l.game.*),
         }
     }
 };
@@ -58,7 +58,7 @@ pub fn init(self: *Game, init_window: bool) !void {
 
     try self.assets.init();
 
-    const menu = MenuState.init(self.assets);
+    const menu = MenuState.init(self);
     self.state = .{ .menu = menu };
 }
 
@@ -79,7 +79,7 @@ pub fn deinit(self: *Game, deinit_window: bool) void {
 }
 
 pub fn update(self: *Game) !void {
-    try self.state.update(self);
+    try self.state.update();
     try self.draw();
 }
 
@@ -93,5 +93,5 @@ fn draw(self: Game) !void {
     ray.BeginDrawing();
     defer ray.EndDrawing();
 
-    self.state.draw(self);
+    self.state.draw();
 }

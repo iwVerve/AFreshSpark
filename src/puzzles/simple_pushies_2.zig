@@ -2,6 +2,7 @@ const ray = @import("../raylib.zig");
 
 pub const colors = .{};
 pub const exit = .{ .x = 6, .y = 2 };
+pub const exit_direction = .right;
 
 pub const tiles =
     \\#######
