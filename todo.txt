@@ -1,5 +1,3 @@
 Add entrances to rooms
-Add colors to rooms
-Redraw player
 Add rooms
 Add win

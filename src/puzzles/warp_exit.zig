@@ -1,6 +1,9 @@
 const ray = @import("../raylib.zig");
 
-pub const colors = .{};
+pub const colors = .{
+    .background = .{ .r = 255, .g = 255, .b = 102, .a = 255 },
+    .foreground = .{ .r = 216, .g = 151, .b = 21, .a = 255 },
+};
 pub const exit = .{ .x = 7, .y = 5 };
 pub const exit_direction = .right;
 
