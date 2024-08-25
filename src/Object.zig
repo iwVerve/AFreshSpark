@@ -79,6 +79,7 @@ texture: ray.Texture2D,
 has_control: bool,
 movable: bool,
 charged: bool,
+invert_open: bool = false,
 
 pub fn init(prototype: *const Prototype, assets: *Assets) Object {
     return prototype.init(assets);

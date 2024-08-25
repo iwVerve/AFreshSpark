@@ -8,6 +8,7 @@ const Line = TileMap.Prototype.Line;
 pub const Prototype = struct {
     button: UVector2,
     door: UVector2,
+    invert: bool,
     lines: []const Line,
 };
 

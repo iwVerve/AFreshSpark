@@ -112,7 +112,11 @@ pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) 
             .object_type = .door,
             .board_position = button_prototype.door,
         };
-        const door = door_prototype.init(assets);
+
+        var door = door_prototype.init(assets);
+        if (button_prototype.invert) {
+            door.invert_open = true;
+        }
         try objects.append(door);
 
         const button: Button = .{
@@ -122,13 +126,16 @@ pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) 
         try buttons.append(button);
     }
 
-    return .{
+    var tile_map: TileMap = .{
         .prototype = prototype,
         .allocator = allocator,
         .assets = assets,
         .objects = objects,
         .buttons = buttons,
     };
+    tile_map.resolveButtons();
+
+    return tile_map;
 }
 
 pub fn deinit(self: *TileMap) void {
@@ -298,11 +305,11 @@ fn resolveButtons(self: *TileMap) void {
                 continue;
             }
             if (util.vec2Eql(object.board_position, button.board_position)) {
-                door.open = true;
+                door.open = !door.invert_open;
                 continue :blk;
             }
         }
-        door.open = false;
+        door.open = door.invert_open;
     }
 }
 
