@@ -427,46 +427,65 @@ fn getObjectAtPosition(self: *TileMap, position: anytype) ?*Object {
 }
 
 pub fn draw(self: TileMap, game: Game) void {
-    ray.BeginMode2D(self.prototype.camera);
-    defer ray.EndMode2D();
+    {
+        ray.BeginMode2D(self.prototype.camera);
+        defer ray.EndMode2D();
 
-    self.prototype.draw(game);
+        self.prototype.draw(game);
 
-    const things_with_lines = .{
-        self.prototype.connections,
-        self.prototype.buttons,
-    };
-    inline for (things_with_lines) |group| {
-        for (group) |thing| {
-            for (thing.lines) |line| {
-                line.draw(game.assets, self.prototype.colors.foreground);
+        const things_with_lines = .{
+            self.prototype.connections,
+            self.prototype.buttons,
+        };
+        inline for (things_with_lines) |group| {
+            for (group) |thing| {
+                for (thing.lines) |line| {
+                    line.draw(game.assets, self.prototype.colors.foreground);
+                }
             }
         }
-    }
 
-    for (self.prototype.connections) |connection| {
-        const ends = .{ connection.a, connection.b };
-        inline for (ends) |end| {
+        for (self.prototype.connections) |connection| {
+            const ends = .{ connection.a, connection.b };
+            inline for (ends) |end| {
+                const position: ray.Vector2 = .{
+                    .x = config.tile_size * @as(f32, @floatFromInt(end.x)),
+                    .y = config.tile_size * @as(f32, @floatFromInt(end.y)),
+                };
+                ray.DrawTextureV(game.assets.connection_end, position, self.prototype.colors.foreground);
+            }
+        }
+        for (self.prototype.buttons) |button| {
             const position: ray.Vector2 = .{
-                .x = config.tile_size * @as(f32, @floatFromInt(end.x)),
-                .y = config.tile_size * @as(f32, @floatFromInt(end.y)),
+                .x = config.tile_size * @as(f32, @floatFromInt(button.button.x)),
+                .y = config.tile_size * @as(f32, @floatFromInt(button.button.y)),
             };
-            ray.DrawTextureV(game.assets.connection_end, position, self.prototype.colors.foreground);
+            ray.DrawTextureV(game.assets.button, position, self.prototype.colors.foreground);
+        }
+
+        self.drawObjectLayer(.default, self.prototype.colors.foreground);
+
+        self.drawObjectLayer(.player, self.prototype.colors.foreground);
+
+        for (self.prototype.outside_rectangles) |rectangle| {
+            ray.DrawRectangleRec(rectangle, self.prototype.colors.foreground);
         }
     }
-    for (self.prototype.buttons) |button| {
-        const position: ray.Vector2 = .{
-            .x = config.tile_size * @as(f32, @floatFromInt(button.button.x)),
-            .y = config.tile_size * @as(f32, @floatFromInt(button.button.y)),
+
+    if (game.state.level.current_level == levels.levels.len - 1) {
+        const win_text =
+            \\Thanks for
+            \\  playing!
+        ;
+        const win_size = 36;
+        const win_font = game.assets.m5x7;
+        const win_measure = ray.MeasureTextEx(win_font, win_text, win_size, 1);
+        const win_center: ray.Vector2 = .{
+            .x = config.resolution.width / 2,
+            .y = config.resolution.height / 2,
         };
-        ray.DrawTextureV(game.assets.button, position, self.prototype.colors.foreground);
-    }
-
-    self.drawObjectLayer(.default, self.prototype.colors.foreground);
-    self.drawObjectLayer(.player, self.prototype.colors.foreground);
-
-    for (self.prototype.outside_rectangles) |rectangle| {
-        ray.DrawRectangleRec(rectangle, self.prototype.colors.foreground);
+        const win_position = ray.Vector2Subtract(win_center, ray.Vector2Scale(win_measure, 0.5));
+        ray.DrawTextEx(win_font, win_text, win_position, win_size, 1, ray.BLACK);
     }
 }
 
