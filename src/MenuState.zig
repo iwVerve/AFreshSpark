@@ -73,8 +73,9 @@ const controls_center: Vector2 = .{ .x = config.resolution.width / 2, .y = confi
 
 const controls_text =
     \\Arrows keys / WASD - Move
-    \\Z / Enter - Confirm
+    \\Z / Backspace - Undo
     \\R - Restart
+    \\Z / Enter - Confirm
     \\Escape - Back to menu / Close
     \\
     \\Press confirm to return

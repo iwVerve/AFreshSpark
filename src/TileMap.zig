@@ -10,6 +10,7 @@ const util = @import("util.zig");
 const Button = @import("Button.zig");
 const LevelState = @import("LevelState.zig");
 const levels = @import("levels.zig");
+const UndoStack = @import("UndoStack.zig");
 
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
@@ -100,6 +101,7 @@ assets: *Assets,
 objects: ArrayList(Object),
 buttons: ArrayList(Button),
 control: bool = true,
+undo_stack: UndoStack,
 
 player_moved: bool = undefined,
 block_moved: bool = undefined,
@@ -135,12 +137,15 @@ pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) 
         try buttons.append(button);
     }
 
+    const undo_stack = try UndoStack.init(objects, allocator);
+
     var tile_map: TileMap = .{
         .prototype = prototype,
         .allocator = allocator,
         .assets = assets,
         .objects = objects,
         .buttons = buttons,
+        .undo_stack = undo_stack,
     };
     tile_map.resolveButtons();
 
@@ -148,6 +153,7 @@ pub fn init(prototype: *const Prototype, assets: *Assets, allocator: Allocator) 
 }
 
 pub fn deinit(self: *TileMap) void {
+    self.undo_stack.deinit();
     self.objects.deinit();
     self.buttons.deinit();
 }
@@ -158,6 +164,17 @@ pub fn update(self: *TileMap, state: *LevelState) !void {
             ray.PlaySound(self.assets.push);
             self.deinit();
             self.* = try TileMap.init(self.prototype, self.assets, self.allocator);
+        }
+
+        inline for (config.undo_keys) |key| {
+            if (ray.IsKeyPressed(key)) {
+                const did_undo = self.undo_stack.undo(self.objects);
+                if (did_undo) {
+                    ray.PlaySound(self.assets.push);
+                    self.snapObjects();
+                    self.resolveButtons();
+                }
+            }
         }
 
         const input_directions = .{
@@ -184,10 +201,14 @@ pub fn update(self: *TileMap, state: *LevelState) !void {
 fn takeTurn(self: *TileMap, direction: Direction, state: *LevelState) !void {
     self.resetSound();
     self.snapObjects();
+    self.undo_stack.startTurn(self.objects);
+
     self.setControlledObjects(direction);
     self.propagateAttemptedDirection();
     self.resolveMovement();
     self.resolveButtons();
+
+    try self.undo_stack.endTurn(self.objects);
 
     if (self.checkWin()) {
         state.game.completed_levels[state.current_level] = true;
