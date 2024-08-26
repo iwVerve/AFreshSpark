@@ -53,6 +53,9 @@ volume: usize = 10,
 
 pub fn init(self: *Game, init_window: bool) !void {
     if (init_window) {
+        if (builtin.mode != .Debug) {
+            ray.SetTraceLogLevel(ray.LOG_ERROR);
+        }
         ray.InitWindow(config.resolution.width, config.resolution.height, config.game_name);
         ray.SetTargetFPS(60);
         ray.SetExitKey(0);
