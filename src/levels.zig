@@ -15,6 +15,7 @@ const Direction = util.Direction;
 
 const level_imports = .{
     @import("puzzles/intro.zig"),
+    @import("puzzles/buttons_1.zig"),
     @import("puzzles/warp_intro.zig"),
     @import("puzzles/simple_pushies.zig"),
     @import("puzzles/simple_pushies_2.zig"),
